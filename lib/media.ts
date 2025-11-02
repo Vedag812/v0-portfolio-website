@@ -20,35 +20,23 @@ export async function getMediaConfig(): Promise<MediaConfig> {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
       console.error("Failed to read media configuration:", error)
     }
+    // On Vercel, just return defaults if file doesn't exist
+    return DEFAULT_MEDIA_CONFIG
   }
 
-  await ensureMediaConfigFile(DEFAULT_MEDIA_CONFIG)
+  // Don't try to create files on serverless - return defaults
   return DEFAULT_MEDIA_CONFIG
 }
 
 export async function updateMediaConfig(config: MediaConfig): Promise<void> {
+  // On Vercel (serverless), filesystem is read-only
+  // This will silently fail in production but work in development
   try {
-    await ensureDirectoryExists(path.dirname(MEDIA_FILE_PATH))
     await fs.writeFile(MEDIA_FILE_PATH, JSON.stringify(config, null, 2), "utf-8")
   } catch (error) {
-    console.warn("Failed to write media config (filesystem may be read-only):", error)
-    // In production (Vercel), this will fail but won't crash the app
+    console.warn("Failed to write media config (filesystem is read-only on Vercel):", error)
+    // Don't throw error - just log warning
   }
-}
-
-async function ensureMediaConfigFile(config: MediaConfig) {
-  await ensureDirectoryExists(path.dirname(MEDIA_FILE_PATH))
-  try {
-    await fs.access(MEDIA_FILE_PATH)
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      await fs.writeFile(MEDIA_FILE_PATH, JSON.stringify(config, null, 2), "utf-8")
-    }
-  }
-}
-
-async function ensureDirectoryExists(dir: string) {
-  await fs.mkdir(dir, { recursive: true })
 }
 
 export function isMediaConfig(value: unknown): value is MediaConfig {
