@@ -1,26 +1,9 @@
-"use client"
-
-import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Brain, Code, Database, Globe } from "lucide-react"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
 
 export function About() {
-  const [bgImage, setBgImage] = useState(
-    "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/about%20me-xjVJydBNu0KiSV3aXomDkHptDnLSRq.png",
-  )
-  const [isEditingBg, setIsEditingBg] = useState(false)
-  const [bgInput, setBgInput] = useState(bgImage)
-
-  const handleBgChange = () => {
-    if (bgInput.trim()) {
-      setBgImage(bgInput)
-      setIsEditingBg(false)
-    }
-  }
-
   const skills = [
     "Machine Learning",
     "Python",
@@ -41,33 +24,12 @@ export function About() {
       <div
         className="absolute inset-0 opacity-20"
         style={{
-          backgroundImage: `url('${bgImage}')`,
+          backgroundImage:
+            "url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/about%20me-xjVJydBNu0KiSV3aXomDkHptDnLSRq.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       />
-      {isEditingBg && (
-        <div className="absolute inset-0 flex items-center justify-center z-50 bg-black/80">
-          <div className="bg-gray-900 p-6 rounded-lg max-w-md w-full mx-4">
-            <h3 className="text-white font-bold mb-4">Edit Background Image URL</h3>
-            <input
-              type="text"
-              value={bgInput}
-              onChange={(e) => setBgInput(e.target.value)}
-              placeholder="Enter image URL"
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded mb-4"
-            />
-            <div className="flex gap-2">
-              <Button onClick={handleBgChange} className="flex-1 bg-netflix-red hover:bg-netflix-red/90 text-white">
-                Save
-              </Button>
-              <Button onClick={() => setIsEditingBg(false)} className="flex-1 bg-gray-700 hover:bg-gray-600 text-white">
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
       <div className="absolute inset-0 bg-gradient-to-b from-netflix-black/80 via-netflix-black/90 to-netflix-black" />
 
       <div className="absolute inset-0 opacity-30">
@@ -84,17 +46,7 @@ export function About() {
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-4xl mx-auto">
-          <div className="flex justify-between items-center mb-12">
-            <h2 className="text-4xl font-bold text-center flex-1 text-balance gradient-text">About Me</h2>
-            <Button
-              onClick={() => setIsEditingBg(true)}
-              variant="outline"
-              size="sm"
-              className="border-netflix-red text-netflix-red hover:bg-netflix-red/10"
-            >
-              Edit BG
-            </Button>
-          </div>
+          <h2 className="text-4xl font-bold text-center mb-12 text-balance gradient-text">About Me</h2>
 
           <div className="flex flex-col md:flex-row items-center gap-8 mb-12">
             <div className="relative">

@@ -15,24 +15,22 @@ export function Contact() {
     email: "",
     message: "",
   })
+  const [isLoading, setIsLoading] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    const subject = encodeURIComponent(`New message from ${formData.name}`)
-    const body = encodeURIComponent(`Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`)
-    const mailtoLink = `mailto:vedantagarwal039@gmail.com?subject=${subject}&body=${body}`
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=vedantagarwal039@gmail.com&su=Message from ${formData.name}&body=${encodeURIComponent(
+      `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`,
+    )}`
 
-    // Open the mailto link
-    window.location.href = mailtoLink
+    window.open(gmailUrl, "_blank")
 
+    // Show success feedback
     setSubmitStatus("success")
     setFormData({ name: "", email: "", message: "" })
-    setTimeout(() => {
-      window.open("https://mail.google.com/mail/u/0/#inbox", "_blank")
-      setSubmitStatus("idle")
-    }, 500)
+    setTimeout(() => setSubmitStatus("idle"), 3000)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -91,10 +89,14 @@ export function Contact() {
                     rows={4}
                     className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                   />
-                  <Button type="submit" className="w-full bg-netflix-red hover:bg-netflix-red/90 text-white">
-                    Send Message
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-netflix-red hover:bg-netflix-red/90 text-white"
+                  >
+                    {isLoading ? "Sending..." : "Send Message"}
                   </Button>
-                  {submitStatus === "success" && <p className="text-green-400 text-sm">Opening Gmail...</p>}
+                  {submitStatus === "success" && <p className="text-green-400 text-sm">Message sent successfully!</p>}
                   {submitStatus === "error" && <p className="text-red-400 text-sm">Failed to send message.</p>}
                 </form>
               </CardContent>
