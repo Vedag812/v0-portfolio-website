@@ -1,6 +1,21 @@
 {
   "projects": [
     {
+      "id": "1762102875290",
+      "title": "Mini Calculator",
+      "description": "Project description",
+      "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlAlTmUjXfbtCG4veePDUPJ3QVDOgkUCeEMg&s",
+      "technologies": [
+        "HTML",
+        "CSS"
+      ],
+      "github": "https://github.com/Vedag812/mini-calculator",
+      "demo": "https://mini-calculator-blue.vercel.app/",
+      "featured": false,
+      "visible": true,
+      "category": "Web Development"
+    },
+    {
       "id": "1",
       "title": "X-Ray Classification System",
       "description": "Classifies X-ray images into pneumonia and normal categories using CNN. Built with TensorFlow/Keras on 5,000+ images, achieving 78% accuracy with 82% precision and 75% recall.",

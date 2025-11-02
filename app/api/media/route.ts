@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
-import { getMediaConfig, updateMediaConfig, isMediaConfig } from "@/lib/media"
+import { getMediaConfig as getBlobMediaConfig, saveMediaConfig } from "@/lib/vercel-storage"
+import { isMediaConfig } from "@/lib/media"
 
 export async function GET() {
-  const config = await getMediaConfig()
+  const config = await getBlobMediaConfig()
   return NextResponse.json(config, {
     headers: {
       "Cache-Control": "no-store",
@@ -30,7 +31,8 @@ export async function PUT(request: Request) {
     return NextResponse.json({ message: "Payload does not match expected schema." }, { status: 400 })
   }
 
-  await updateMediaConfig(payload)
+  // Save to Vercel Blob Storage
+  await saveMediaConfig(payload)
 
   return NextResponse.json({ success: true })
 }

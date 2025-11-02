@@ -119,8 +119,7 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
                   className="w-full h-full"
                   title="Project Demo"
                   loading="lazy"
-                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                />
+sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-popups-to-escape-sandbox allow-top-navigation"                />
               </div>
             </div>
           )}

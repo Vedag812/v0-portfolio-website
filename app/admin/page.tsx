@@ -63,6 +63,7 @@ export default function AdminDashboard() {
   
   // Status
   const [status, setStatus] = useState<StatusMessage | null>(null)
+  const [isLoggingIn, setIsLoggingIn] = useState(false)
 
   useEffect(() => {
     const savedToken = window.localStorage.getItem("adminToken")
@@ -108,15 +109,49 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!loginToken.trim()) {
       setStatus({ type: "error", text: "Please enter your admin token." })
       return
     }
-    window.localStorage.setItem("adminToken", loginToken.trim())
-    setStoredToken(loginToken.trim())
-    setLoginToken("")
-    setStatus(null)
+
+    setIsLoggingIn(true)
+    setStatus({ type: "info", text: "Verifying password..." })
+
+    // Verify token by making a test API request
+    try {
+      const response = await fetch("/api/projects", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${loginToken.trim()}`
+        },
+        body: JSON.stringify({ projects: [] }),
+      })
+
+      if (response.status === 401) {
+        setStatus({ type: "error", text: "❌ Wrong password! Access denied." })
+        setLoginToken("")
+        setIsLoggingIn(false)
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error("Verification failed")
+      }
+
+      // Token is valid, store it
+      window.localStorage.setItem("adminToken", loginToken.trim())
+      setStoredToken(loginToken.trim())
+      setLoginToken("")
+      setStatus({ type: "success", text: "✅ Login successful!" })
+      setTimeout(() => setStatus(null), 2000)
+    } catch (error) {
+      setStatus({ type: "error", text: "Failed to verify token. Try again." })
+      setLoginToken("")
+    } finally {
+      setIsLoggingIn(false)
+    }
   }
 
   const handleLogout = () => {
@@ -130,17 +165,34 @@ export default function AdminDashboard() {
   const handleSaveProjects = async () => {
     if (!storedToken) return
     setIsSavingProjects(true)
+    
+    console.log("💾 Saving projects:", projects.length, "total projects")
+    console.log("Visible projects:", projects.filter(p => p.visible).length)
+    console.log("Hidden projects:", projects.filter(p => !p.visible).length)
+    
     try {
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${storedToken}` },
         body: JSON.stringify({ projects }),
       })
-      if (!response.ok) throw new Error("Failed to save")
-      setStatus({ type: "success", text: "✅ Projects saved! Changes live on website." })
-      setTimeout(() => setStatus(null), 3000)
+      
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to save")
+      }
+      
+      console.log("✅ Save response:", result)
+      
+      // Force refresh the projects data
+      await fetch("/api/projects", { cache: "no-store" })
+      
+      setStatus({ type: "success", text: `✅ Saved ${result.projectCount} projects! Refresh /projects page to see changes.` })
+      setTimeout(() => setStatus(null), 5000)
     } catch (error) {
-      setStatus({ type: "error", text: "Failed to save projects." })
+      console.error("❌ Save error:", error)
+      setStatus({ type: "error", text: "Failed to save projects: " + String(error) })
     } finally {
       setIsSavingProjects(false)
     }
@@ -174,10 +226,14 @@ export default function AdminDashboard() {
 
   const handleToggleFeatured = (id: string) => {
     setProjects(projects.map(p => p.id === id ? { ...p, featured: !p.featured } : p))
+    setStatus({ type: "info", text: "Featured status changed. Click Save to apply." })
+    setTimeout(() => setStatus(null), 3000)
   }
 
   const handleToggleVisible = (id: string) => {
     setProjects(projects.map(p => p.id === id ? { ...p, visible: !p.visible } : p))
+    setStatus({ type: "info", text: "Visibility changed. Click Save to apply." })
+    setTimeout(() => setStatus(null), 3000)
   }
 
   const handleEditProject = (project: Project) => {
@@ -298,10 +354,15 @@ export default function AdminDashboard() {
               onChange={(e) => setLoginToken(e.target.value)}
               placeholder="Enter admin token"
               className="border-netflix-red/30"
-              onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+              onKeyPress={(e) => e.key === 'Enter' && !isLoggingIn && handleLogin()}
+              disabled={isLoggingIn}
             />
-            <Button onClick={handleLogin} className="w-full bg-netflix-red hover:bg-netflix-red/90">
-              Unlock Dashboard
+            <Button 
+              onClick={handleLogin} 
+              className="w-full bg-netflix-red hover:bg-netflix-red/90"
+              disabled={isLoggingIn}
+            >
+              {isLoggingIn ? "Verifying..." : "Unlock Dashboard"}
             </Button>
             {status && <p className={`text-sm text-center ${status.type === "error" ? "text-red-400" : "text-green-400"}`}>{status.text}</p>}
           </CardContent>
