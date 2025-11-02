@@ -2,30 +2,16 @@
 
 import type React from "react"
 
+import { useMediaConfig } from "@/components/media-config-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Brain, Code, Database, Globe, Zap } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useInView } from "@/hooks/use-in-view"
 import Image from "next/image"
 
 export function Skills() {
-  const [isVisible, setIsVisible] = useState(false)
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-        }
-      },
-      { threshold: 0.3 },
-    )
-
-    const element = document.getElementById("skills")
-    if (element) observer.observe(element)
-
-    return () => observer.disconnect()
-  }, [])
+  const media = useMediaConfig()
+  const { ref, isInView } = useInView()
 
   const skillCategories = [
     {
@@ -89,12 +75,11 @@ export function Skills() {
   ]
 
   return (
-    <section id="skills" className="py-20 relative overflow-hidden">
+    <section id="skills" className="py-20 relative overflow-hidden" ref={ref}>
       <div
         className="absolute inset-0 opacity-15"
         style={{
-          backgroundImage:
-            "url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/skills-kjqaN7GQDjzEFWT7pZ8abRQS6DfTXb.png')",
+          backgroundImage: `url('${media.backgrounds.skills}')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -120,12 +105,12 @@ export function Skills() {
 
       <div className="container mx-auto px-6 relative z-10">
         <div className="max-w-6xl mx-auto">
-          <div className={`text-center mb-16 transition-all duration-1000 ${isVisible ? "fade-in-up" : "opacity-0"}`}>
+          <div className={`text-center mb-16 transition-all duration-1000 ${isInView ? "fade-in-up" : "opacity-0"}`}>
             <div className="flex flex-col items-center gap-6 mb-8">
               <div className="relative">
                 <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-netflix-red shadow-lg">
                   <Image
-                    src="/vedant-profile.jpg"
+                    src={media.profileImage}
                     alt="Vedant Agarwal"
                     width={96}
                     height={96}
@@ -146,7 +131,7 @@ export function Skills() {
               <Card
                 key={index}
                 className={`netflix-card hover-lift transition-all duration-500 bg-gray-900/80 border-netflix-red/30 backdrop-blur ${
-                  isVisible ? "slide-in-left" : "opacity-0"
+                  isInView ? "slide-in-left" : "opacity-0"
                 }`}
                 style={{ animationDelay: `${index * 0.2}s` }}
               >
@@ -184,7 +169,7 @@ export function Skills() {
           {/* Tools & Technologies */}
           <Card
             className={`netflix-card hover-lift transition-all duration-700 bg-gray-900/80 border-netflix-red/30 backdrop-blur ${
-              isVisible ? "fade-in-up" : "opacity-0"
+              isInView ? "fade-in-up" : "opacity-0"
             }`}
           >
             <CardHeader>

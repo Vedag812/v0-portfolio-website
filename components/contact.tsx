@@ -2,6 +2,7 @@
 
 import type React from "react"
 
+import { useMediaConfig } from "@/components/media-config-provider"
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Github, Linkedin, Mail, MapPin } from "lucide-react"
 
 export function Contact() {
+  const media = useMediaConfig()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,17 +22,38 @@ export function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsLoading(true)
+    setSubmitStatus("idle")
 
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=vedantagarwal039@gmail.com&su=Message from ${formData.name}&body=${encodeURIComponent(
-      `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`,
-    )}`
+    try {
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
 
-    window.open(gmailUrl, "_blank")
+      const data = await response.json()
 
-    // Show success feedback
-    setSubmitStatus("success")
-    setFormData({ name: "", email: "", message: "" })
-    setTimeout(() => setSubmitStatus("idle"), 3000)
+      if (data.success) {
+        setSubmitStatus("success")
+        setFormData({ name: "", email: "", message: "" })
+        
+        // Open mailto link to send email
+        const subject = `Portfolio Contact: Message from ${formData.name}`
+        const body = `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
+        window.location.href = `mailto:vedantagarwal039@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+      } else {
+        setSubmitStatus("error")
+      }
+    } catch (error) {
+      console.error("Failed to send message:", error)
+      setSubmitStatus("error")
+    } finally {
+      setIsLoading(false)
+      setTimeout(() => setSubmitStatus("idle"), 5000)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -45,7 +68,7 @@ export function Contact() {
       <div
         className="absolute inset-0 opacity-15"
         style={{
-          backgroundImage: "url('/contact-icons.jpg')",
+          backgroundImage: `url('${media.backgrounds.contact}')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -92,12 +115,20 @@ export function Contact() {
                   <Button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-netflix-red hover:bg-netflix-red/90 text-white"
+                    className="w-full bg-netflix-red hover:bg-netflix-red/90 text-white transition-all"
                   >
                     {isLoading ? "Sending..." : "Send Message"}
                   </Button>
-                  {submitStatus === "success" && <p className="text-green-400 text-sm">Message sent successfully!</p>}
-                  {submitStatus === "error" && <p className="text-red-400 text-sm">Failed to send message.</p>}
+                  {submitStatus === "success" && (
+                    <div className="p-3 bg-green-500/20 border border-green-500/50 rounded-lg animate-slide-up">
+                      <p className="text-green-400 text-sm font-semibold">✅ Message sent successfully! I'll get back to you soon.</p>
+                    </div>
+                  )}
+                  {submitStatus === "error" && (
+                    <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg animate-slide-up">
+                      <p className="text-red-400 text-sm font-semibold">❌ Failed to send message. Please try again.</p>
+                    </div>
+                  )}
                 </form>
               </CardContent>
             </Card>

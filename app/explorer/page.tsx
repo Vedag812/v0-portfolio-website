@@ -2,214 +2,89 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
-import { ArrowLeft, Heart, MessageCircle } from "lucide-react"
+import { ArrowLeft, ExternalLink, Sparkles, RefreshCw } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { ArticleRefreshIndicator } from "@/components/article-refresh-indicator"
-import { BookmarkButton, useArticleBookmarks } from "@/components/article-bookmarks"
-import { ReadingTimeDisplay } from "@/components/reading-time"
-import { ArticleShare } from "@/components/article-share"
 
-interface LinkedInPost {
+interface Article {
   id: string
-  author: string
-  handle: string
-  avatar: string
-  content: string
-  image?: string
-  likes: number
-  comments: number
-  shares: number
-  timestamp: string
-  category: string
-  trending?: boolean
-  viewCount?: number
+  title: string
+  description: string
+  url: string
+  image: string
+  source: string
+  publishedAt: string
+  category: "ai" | "tech" | "dev" | "linkedin" | "movies"
+  rating?: number
+  genre?: string
 }
 
-const initialLinkedInPosts: LinkedInPost[] = [
-  {
-    id: "1",
-    author: "Andrew Ng",
-    handle: "@andrewng",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-    content:
-      "The future of AI is not about building bigger models, but smarter ones. Efficiency and interpretability are the new frontiers. What are your thoughts on the direction of AI research? The intersection of performance and sustainability is crucial for the next generation of AI systems.",
-    image: "https://images.unsplash.com/photo-1677442d019cecf8d5a594b4e1d0b5c5?w=500&h=300&fit=crop",
-    likes: 12500,
-    comments: 2300,
-    shares: 1800,
-    timestamp: "2 hours ago",
-    category: "AI & LLMs",
-    trending: true,
-    viewCount: 45000,
-  },
-  {
-    id: "2",
-    author: "Yann LeCun",
-    handle: "@ylecun",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
-    content:
-      "Self-supervised learning is revolutionizing how we train AI systems. By learning from unlabeled data, we can build more robust and generalizable models. The implications are profound. This approach is reducing the dependency on expensive labeled datasets.",
-    image: "https://images.unsplash.com/photo-1516321318423-f06f70d504f0?w=500&h=300&fit=crop",
-    likes: 9800,
-    comments: 1900,
-    shares: 1400,
-    timestamp: "4 hours ago",
-    category: "Machine Learning",
-    viewCount: 38000,
-  },
-  {
-    id: "3",
-    author: "Vercel Team",
-    handle: "@vercel",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-    content:
-      "Next.js 15 is here with incredible performance improvements. Server Components, Edge Functions, and streaming are now more powerful than ever. Ready to build the future of web? The new DX improvements make building full-stack applications faster and easier.",
-    image: "https://images.unsplash.com/photo-1633356122544-f134324ef6db?w=500&h=300&fit=crop",
-    likes: 15200,
-    comments: 3100,
-    shares: 2200,
-    timestamp: "6 hours ago",
-    category: "Web Development",
-    trending: true,
-    viewCount: 52000,
-  },
-  {
-    id: "4",
-    author: "Jeremy Howard",
-    handle: "@jeremyphoward",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-    content:
-      "Deep learning is becoming more accessible every day. With tools like fastai, anyone can build state-of-the-art models. The democratization of AI is here. Education and accessibility are key to ensuring diverse talent can contribute to AI advancement.",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=300&fit=crop",
-    likes: 8900,
-    comments: 1700,
-    shares: 1200,
-    timestamp: "8 hours ago",
-    category: "Data Science",
-    viewCount: 31000,
-  },
-  {
-    id: "5",
-    author: "Hugging Face",
-    handle: "@huggingface",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-    content:
-      "Transformers have changed everything. From NLP to computer vision, the transformer architecture is the foundation of modern AI. Check out our latest models and datasets. The open-source community contribution to transformer models is incredible.",
-    image: "https://images.unsplash.com/photo-1677442d019cecf8d5a594b4e1d0b5c5?w=500&h=300&fit=crop",
-    likes: 11300,
-    comments: 2100,
-    shares: 1600,
-    timestamp: "10 hours ago",
-    category: "AI & LLMs",
-    viewCount: 42000,
-  },
-  {
-    id: "6",
-    author: "Kaggle",
-    handle: "@kaggle",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-    content:
-      "Our latest competition is live! Compete with thousands of data scientists and machine learning engineers. Win prizes and showcase your skills to top companies. Kaggle competitions are a great way to learn, network, and get noticed by leading organizations.",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=500&h=300&fit=crop",
-    likes: 7600,
-    comments: 1400,
-    shares: 900,
-    timestamp: "12 hours ago",
-    category: "Data Science",
-    viewCount: 28000,
-  },
-  {
-    id: "7",
-    author: "TensorFlow",
-    handle: "@tensorflow",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-    content:
-      "TensorFlow 2.15 brings significant performance improvements and new features for production ML. Learn how to optimize your models for deployment. Production-ready ML requires careful attention to performance, reliability, and scalability.",
-    image: "https://images.unsplash.com/photo-1516321318423-f06f70d504f0?w=500&h=300&fit=crop",
-    likes: 6800,
-    comments: 1200,
-    shares: 800,
-    timestamp: "14 hours ago",
-    category: "Machine Learning",
-    viewCount: 25000,
-  },
-  {
-    id: "8",
-    author: "Anthropic",
-    handle: "@anthropic",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop",
-    content:
-      "Claude 3 is pushing the boundaries of what AI can do. With improved reasoning and safety, we're building AI that's more helpful and aligned with human values. Safety and alignment in AI systems are critical as they become more capable and integrated into society.",
-    image: "https://images.unsplash.com/photo-1677442d019cecf8d5a594b4e1d0b5c5?w=500&h=300&fit=crop",
-    likes: 13400,
-    comments: 2500,
-    shares: 1900,
-    timestamp: "16 hours ago",
-    category: "AI & LLMs",
-    trending: true,
-    viewCount: 48000,
-  },
-]
-
-const categories = ["All", "AI & LLMs", "Machine Learning", "Web Development", "Data Science"]
+// All content now loaded from API
 
 export default function ExplorerPage() {
-  const [posts, setPosts] = useState<LinkedInPost[]>(initialLinkedInPosts)
-  const [selectedCategory, setSelectedCategory] = useState("All")
-  const [newArticlesCount, setNewArticlesCount] = useState(0)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [lastUpdated, setLastUpdated] = useState(new Date())
-  const [searchQuery, setSearchQuery] = useState("")
   const router = useRouter()
-  const { toggleBookmark, isBookmarked } = useArticleBookmarks()
-
+  const [lastUpdated, setLastUpdated] = useState(new Date())
+  
+  // New state for AI/Tech articles
+  const [articles, setArticles] = useState<Article[]>([])
+  const [articlesLoading, setArticlesLoading] = useState(true)
+  const [showArticles, setShowArticles] = useState(true)
+  
+  // State for movie recommendations
+  const [movies, setMovies] = useState<Article[]>([])
+  const [moviesLoading, setMoviesLoading] = useState(true)
+  const [showMovies, setShowMovies] = useState(true)
+  
+  // Fetch AI/Tech articles
+  const fetchArticles = useCallback(async () => {
+    try {
+      const response = await fetch("/api/content?category=all", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      })
+      const data = await response.json()
+      if (data.success) {
+        const allContent = data.data
+        // Separate movies from articles
+        const articleData = allContent.filter((item: Article) => item.category !== "movies")
+        const movieData = allContent.filter((item: Article) => item.category === "movies")
+        
+        setArticles(articleData.slice(0, 6)) // Show top 6 articles
+        setMovies(movieData.slice(0, 6)) // Show top 6 movies
+        console.log("✅ Content fetched successfully")
+      }
+    } catch (error) {
+      console.error("Failed to fetch content:", error)
+    } finally {
+      setArticlesLoading(false)
+      setMoviesLoading(false)
+    }
+  }, [])
+  
   useEffect(() => {
-    const interval = setInterval(() => {
-      const randomNewCount = Math.floor(Math.random() * 3) + 1
-      setNewArticlesCount(randomNewCount)
-    }, 30000) // Check every 30 seconds
+    fetchArticles()
+    
+    // Auto-refresh articles every hour
+    const articleRefresh = setInterval(() => {
+      console.log("🔄 Auto-refreshing articles...")
+      fetchArticles()
+    }, 3600000) // 1 hour
+    
+    return () => clearInterval(articleRefresh)
+  }, [fetchArticles])
 
-    return () => clearInterval(interval)
-  }, [])
 
-  const handleRefresh = useCallback(() => {
-    setIsRefreshing(true)
-    // Simulate API call delay
-    setTimeout(() => {
-      // Add new posts to the beginning
-      const newPosts: LinkedInPost[] = [
-        {
-          id: `new-${Date.now()}`,
-          author: "New Creator",
-          handle: "@newcomer",
-          avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop",
-          content: "Just shared an exciting new perspective on recent AI developments and breakthroughs in the field.",
-          image: "https://images.unsplash.com/photo-1677442d019cecf8d5a594b4e1d0b5c5?w=500&h=300&fit=crop",
-          likes: 0,
-          comments: 0,
-          shares: 0,
-          timestamp: "Just now",
-          category: "AI & LLMs",
-          trending: true,
-          viewCount: 0,
-        },
-      ]
 
-      setPosts((prev) => [...newPosts, ...prev])
-      setNewArticlesCount(0)
-      setLastUpdated(new Date())
-      setIsRefreshing(false)
-    }, 1500)
-  }, [])
-
-  const filteredPosts = posts
-    .filter((post) => selectedCategory === "All" || post.category === selectedCategory)
-    .filter((post) =>
-      searchQuery === ""
-        ? true
-        : post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          post.author.toLowerCase().includes(searchQuery.toLowerCase()),
-    )
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    if (diffInHours < 1) return "Just now"
+    if (diffInHours === 1) return "1 hour ago"
+    if (diffInHours < 24) return `${diffInHours} hours ago`
+    const diffInDays = Math.floor(diffInHours / 24)
+    if (diffInDays === 1) return "1 day ago"
+    return `${diffInDays} days ago`
+  }
 
   return (
     <div className="min-h-screen bg-netflix-black">
@@ -217,150 +92,266 @@ export default function ExplorerPage() {
       <div className="bg-gradient-to-b from-netflix-red/20 to-netflix-black px-4 sm:px-6 py-6 sm:py-12">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-netflix-red hover:text-netflix-red/80 transition-colors mb-4 sm:mb-6"
+          className="flex items-center gap-2 text-netflix-red hover:text-netflix-red/80 transition-colors mb-4 sm:mb-6 animate-slide-in-left"
         >
           <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           <span className="text-xs sm:text-sm font-semibold">Back</span>
         </button>
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-2 sm:mb-4 text-balance">
-          Tech Creators & Insights
-        </h1>
-        <p className="text-gray-300 text-xs sm:text-sm md:text-base max-w-2xl">
-          Discover the latest insights and posts from top tech creators. Stay updated with trending topics in AI,
-          Machine Learning, Web Development, and Data Science.
+        <div className="flex items-center gap-3 mb-2 sm:mb-4 animate-slide-up">
+          <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-netflix-red animate-float" />
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white text-balance">
+            Tech Explorer & Insights
+          </h1>
+        </div>
+        <p className="text-gray-300 text-xs sm:text-sm md:text-base max-w-2xl animate-slide-up stagger-1">
+          Discover the latest in AI, technology, and insights from top creators. Auto-updates every hour with fresh content.
         </p>
-      </div>
-
-      {/* Real-time Update Indicator */}
-      <div className="px-4 sm:px-6 py-4 bg-netflix-black border-b border-gray-700">
-        <ArticleRefreshIndicator
-          newArticlesCount={newArticlesCount}
-          onRefresh={handleRefresh}
-          isRefreshing={isRefreshing}
-          lastUpdated={lastUpdated}
-        />
-      </div>
-
-      {/* Search Bar */}
-      <div className="px-4 sm:px-6 py-4 border-b border-gray-700 bg-netflix-black">
-        <input
-          type="text"
-          placeholder="Search articles by author or content..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-gray-800 text-white placeholder-gray-400 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-netflix-red text-xs sm:text-sm"
-        />
-      </div>
-
-      {/* Category Filter */}
-      <div className="px-4 sm:px-6 py-4 sm:py-6 border-b border-gray-700 bg-netflix-black overflow-x-auto">
-        <div className="flex gap-2 sm:gap-3 pb-2">
-          {categories.map((category) => (
-            <button
-              key={category}
-              onClick={() => setSelectedCategory(category)}
-              className={`px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 rounded-full font-semibold whitespace-nowrap text-xs sm:text-sm md:text-base transition-all ${
-                selectedCategory === category
-                  ? "bg-netflix-red text-white"
-                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+        <div className="flex items-center gap-4 text-xs text-white/50 mt-3 animate-slide-up stagger-2">
+          <div className="flex items-center gap-2">
+            <RefreshCw className="h-3 w-3" />
+            <span>Auto-updates hourly</span>
+          </div>
+          <span>•</span>
+          <span>Last updated: {lastUpdated.toLocaleTimeString()}</span>
         </div>
       </div>
 
-      {/* Posts Grid */}
-      <div className="px-4 sm:px-6 py-6 sm:py-8 md:py-12">
-        {filteredPosts.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-400 text-sm">No articles found matching your search.</p>
+      {/* AI/Tech Articles Section */}
+      {showArticles && (
+        <div className="px-4 sm:px-6 py-6 sm:py-8 border-b border-gray-800 bg-netflix-dark-gray/50">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-white animate-slide-in-left">
+              🚀 Latest AI & Tech Articles
+            </h2>
+            <button
+              onClick={() => setShowArticles(false)}
+              className="text-xs text-gray-400 hover:text-white transition-colors"
+            >
+              Hide
+            </button>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {filteredPosts.map((post) => (
-              <div
-                key={post.id}
-                className="bg-gray-900 rounded-lg overflow-hidden hover:bg-gray-800 transition-all duration-300 hover:shadow-2xl hover:shadow-netflix-red/20 flex flex-col h-full border border-gray-800"
-              >
-                {/* Author Header */}
-                <div className="p-3 sm:p-4 flex items-start gap-3">
-                  <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0">
-                    <Image
-                      src={post.avatar || "/placeholder.svg"}
-                      alt={post.author}
-                      fill
-                      className="rounded-full object-cover"
-                    />
+          
+          {articlesLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-netflix-light-gray rounded-lg overflow-hidden animate-pulse">
+                  <div className="h-40 bg-netflix-dark-gray" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-netflix-dark-gray rounded w-3/4" />
+                    <div className="h-3 bg-netflix-dark-gray rounded" />
+                    <div className="h-3 bg-netflix-dark-gray rounded w-5/6" />
                   </div>
-                  <div className="flex-grow min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-sm sm:text-base font-bold text-white truncate">{post.author}</h3>
-                      {post.trending && (
-                        <span className="text-xs bg-netflix-red/20 text-netflix-red px-2 py-0.5 rounded">Trending</span>
-                      )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {articles.map((article, index) => (
+                <article
+                  key={article.id}
+                  className="bg-netflix-light-gray rounded-lg overflow-hidden group hover:scale-105 transition-all duration-300 hover:shadow-xl hover:shadow-netflix-red/20 cursor-pointer animate-scale-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                  onClick={() => window.open(article.url, "_blank")}
+                >
+                  <div className="relative h-40 overflow-hidden">
+                    <Image
+                      src={article.image}
+                      alt={article.title}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute top-2 right-2 bg-netflix-red px-2 py-1 rounded-full text-xs font-semibold text-white">
+                      {article.category.toUpperCase()}
                     </div>
-                    <p className="text-xs text-gray-400">{post.handle}</p>
                   </div>
-                  <span className="bg-netflix-red text-white px-2 sm:px-3 py-1 rounded-full text-xs font-semibold flex-shrink-0">
-                    {post.category}
-                  </span>
-                </div>
+                  
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-netflix-red font-semibold">{article.source}</span>
+                      <span className="text-xs text-white/50">{formatTimeAgo(article.publishedAt)}</span>
+                    </div>
+                    
+                    <h3 className="text-white font-bold text-sm mb-2 line-clamp-2 group-hover:text-netflix-red transition-colors">
+                      {article.title}
+                    </h3>
+                    
+                    <p className="text-white/70 text-xs line-clamp-2 mb-3">
+                      {article.description}
+                    </p>
+                    
+                    <div className="flex items-center text-netflix-red text-xs font-semibold group-hover:gap-2 transition-all">
+                      Read More
+                      <ExternalLink className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {!showArticles && (
+        <div className="px-4 sm:px-6 py-3 border-b border-gray-800 bg-netflix-dark-gray/30">
+          <button
+            onClick={() => setShowArticles(true)}
+            className="text-sm text-netflix-red hover:text-netflix-red/80 transition-colors font-semibold"
+          >
+            ⬆️ Show AI & Tech Articles
+          </button>
+        </div>
+      )}
 
-                {/* Post Content */}
-                <div className="px-3 sm:px-4 pb-3 sm:pb-4">
-                  <p className="text-gray-300 text-xs sm:text-sm line-clamp-4">{post.content}</p>
-                  <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
-                    <ReadingTimeDisplay text={post.content} />
-                    {post.viewCount && <span>• {(post.viewCount / 1000).toFixed(1)}K views</span>}
+      {/* Movie Recommendations Section */}
+      {showMovies && (
+        <div className="px-4 sm:px-6 py-6 sm:py-8 border-b border-gray-800 bg-netflix-black">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-white animate-slide-in-left">
+              🎬 Tech Movies & Shows You'll Love
+            </h2>
+            <button
+              onClick={() => setShowMovies(false)}
+              className="text-xs text-gray-400 hover:text-white transition-colors"
+            >
+              Hide
+            </button>
+          </div>
+          
+          {moviesLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-netflix-light-gray rounded-lg overflow-hidden animate-pulse">
+                  <div className="h-48 bg-netflix-dark-gray" />
+                  <div className="p-4 space-y-3">
+                    <div className="h-4 bg-netflix-dark-gray rounded w-3/4" />
+                    <div className="h-3 bg-netflix-dark-gray rounded" />
+                    <div className="h-3 bg-netflix-dark-gray rounded w-5/6" />
                   </div>
                 </div>
-
-                {/* Post Image */}
-                {post.image && (
-                  <div className="relative h-40 sm:h-48 overflow-hidden bg-gray-800 mx-3 sm:mx-4 mb-3 sm:mb-4 rounded">
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {movies.map((movie, index) => (
+                <article
+                  key={movie.id}
+                  className="bg-netflix-light-gray rounded-lg overflow-hidden group hover:scale-105 transition-all duration-300 hover:shadow-xl hover:shadow-netflix-red/20 cursor-pointer animate-scale-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                  onClick={() => window.open(movie.url, "_blank")}
+                >
+                  <div className="relative h-48 overflow-hidden">
                     <Image
-                      src={post.image || "/placeholder.svg"}
-                      alt="Post"
+                      src={movie.image}
+                      alt={movie.title}
                       fill
-                      className="object-cover hover:scale-110 transition-transform duration-300"
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
                     />
+                    <div className="absolute top-2 right-2 bg-yellow-500 px-2 py-1 rounded-full text-xs font-bold text-black flex items-center gap-1">
+                      ⭐ {movie.rating}/10
+                    </div>
+                    <div className="absolute top-2 left-2 bg-black/80 px-2 py-1 rounded text-xs font-semibold text-white">
+                      {movie.genre}
+                    </div>
                   </div>
-                )}
+                  
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-netflix-red font-semibold">{movie.source}</span>
+                      <span className="text-xs text-white/50">IMDb</span>
+                    </div>
+                    
+                    <h3 className="text-white font-bold text-sm mb-2 group-hover:text-netflix-red transition-colors">
+                      {movie.title}
+                    </h3>
+                    
+                    <p className="text-white/70 text-xs line-clamp-3 mb-3">
+                      {movie.description}
+                    </p>
+                    
+                    <div className="flex items-center text-netflix-red text-xs font-semibold group-hover:gap-2 transition-all">
+                      Watch on IMDb
+                      <ExternalLink className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {!showMovies && (
+        <div className="px-4 sm:px-6 py-3 border-b border-gray-800 bg-netflix-black">
+          <button
+            onClick={() => setShowMovies(true)}
+            className="text-sm text-netflix-red hover:text-netflix-red/80 transition-colors font-semibold"
+          >
+            ⬆️ Show Movie Recommendations
+          </button>
+        </div>
+      )}
 
-                {/* Engagement Stats */}
-                <div className="px-3 sm:px-4 py-2 sm:py-3 border-t border-gray-700 text-xs text-gray-400 space-y-1">
-                  <p>
-                    {post.likes.toLocaleString()} likes • {post.comments.toLocaleString()} comments
-                  </p>
-                  <p className="text-gray-500">{post.timestamp}</p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="px-3 sm:px-4 py-3 sm:py-4 border-t border-gray-700 flex gap-2 sm:gap-3">
-                  <button className="flex-1 flex items-center justify-center gap-2 text-gray-400 hover:text-netflix-red transition-colors text-xs sm:text-sm">
-                    <Heart className="w-4 h-4" />
-                    <span className="hidden sm:inline">Like</span>
-                  </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 text-gray-400 hover:text-netflix-red transition-colors text-xs sm:text-sm">
-                    <MessageCircle className="w-4 h-4" />
-                    <span className="hidden sm:inline">Comment</span>
-                  </button>
-                  <BookmarkButton
-                    articleId={post.id}
-                    onToggle={() =>
-                      toggleBookmark({
-                        id: post.id,
-                        author: post.author,
-                        content: post.content,
-                        timestamp: post.timestamp,
-                      })
-                    }
-                  />
-                  <ArticleShare articleId={post.id} author={post.author} content={post.content} />
+      {/* LinkedIn Posts Section from API */}
+      <div className="px-4 sm:px-6 py-6 sm:py-8 border-b border-gray-800 bg-netflix-dark-gray/30">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-white animate-slide-in-left">
+            💼 Trending LinkedIn Posts
+          </h2>
+        </div>
+        
+        {articlesLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-netflix-light-gray rounded-lg overflow-hidden animate-pulse">
+                <div className="p-4 space-y-3">
+                  <div className="h-4 bg-netflix-dark-gray rounded w-3/4" />
+                  <div className="h-3 bg-netflix-dark-gray rounded" />
+                  <div className="h-3 bg-netflix-dark-gray rounded w-5/6" />
                 </div>
               </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {articles.filter(article => article.category === "linkedin").slice(0, 4).map((post, index) => (
+              <article
+                key={post.id}
+                className="bg-netflix-light-gray rounded-lg overflow-hidden group hover:scale-105 transition-all duration-300 hover:shadow-xl hover:shadow-netflix-red/20 cursor-pointer animate-scale-in"
+                style={{ animationDelay: `${index * 0.1}s` }}
+                onClick={() => window.open(post.url, "_blank")}
+              >
+                <div className="relative h-48 overflow-hidden">
+                  <Image
+                    src={post.image}
+                    alt={post.title}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute top-2 right-2 bg-blue-600 px-2 py-1 rounded-full text-xs font-semibold text-white">
+                    💼 LINKEDIN
+                  </div>
+                </div>
+                
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-netflix-red font-semibold">{post.source}</span>
+                    <span className="text-xs text-white/50">{formatTimeAgo(post.publishedAt)}</span>
+                  </div>
+                  
+                  <h3 className="text-white font-bold text-base mb-2 line-clamp-2 group-hover:text-netflix-red transition-colors">
+                    {post.title}
+                  </h3>
+                  
+                  <p className="text-white/70 text-sm line-clamp-3 mb-3">
+                    {post.description}
+                  </p>
+                  
+                  <div className="flex items-center text-netflix-red text-sm font-semibold group-hover:gap-2 transition-all">
+                    Read More
+                    <ExternalLink className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              </article>
             ))}
           </div>
         )}

@@ -1,8 +1,12 @@
+"use client"
+
+import { useMediaConfig } from "@/components/media-config-provider"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, MapPin } from "lucide-react"
 
 export function Experience() {
+  const media = useMediaConfig()
   const experiences = [
     {
       title: "Indigo Squad Member",
@@ -12,8 +16,7 @@ export function Experience() {
       description:
         "Contributing to India's largest college cultural festival, working on event coordination and technical initiatives.",
       type: "Leadership",
-      backgroundImage:
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/experience-B24f9rAK1SziWfvaTiWzsLN7Hi05M3.jpg",
+  backgroundImage: media.backgrounds.experience,
     },
     {
       title: "Member",
@@ -23,8 +26,7 @@ export function Experience() {
       description:
         "Active member of the developer community, participating in workshops, hackathons, and knowledge sharing sessions.",
       type: "Community",
-      backgroundImage:
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/experience-B24f9rAK1SziWfvaTiWzsLN7Hi05M3.jpg",
+  backgroundImage: media.backgrounds.experience,
     },
     {
       title: "Tech Volunteer",
@@ -34,8 +36,7 @@ export function Experience() {
       description:
         "Enhanced event websites using React.js, attracting 10,000+ visitors across 5 events and improving page load time by 40%. Resolved 50+ technical issues during live events, ensuring zero downtime.",
       type: "Volunteer",
-      backgroundImage:
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/experience-B24f9rAK1SziWfvaTiWzsLN7Hi05M3.jpg",
+  backgroundImage: media.backgrounds.experience,
     },
     {
       title: "Volunteer",
@@ -45,8 +46,7 @@ export function Experience() {
       description:
         "Participated in community service initiatives and social development programs, contributing to local community welfare projects.",
       type: "Service",
-      backgroundImage:
-        "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/experience-B24f9rAK1SziWfvaTiWzsLN7Hi05M3.jpg",
+  backgroundImage: media.backgrounds.experience,
     },
   ]
 
@@ -72,14 +72,14 @@ export function Experience() {
             <div
               className="h-48 bg-cover bg-center"
               style={{
-                backgroundImage: `url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/experience-B24f9rAK1SziWfvaTiWzsLN7Hi05M3.jpg')`,
+                backgroundImage: `url('${media.backgrounds.experience}')`,
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
             <div className="absolute inset-0 flex items-center px-8">
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 rounded-full overflow-hidden border-3 border-white shadow-lg">
-                  <img src="/vedant-profile.jpg" alt="Vedant Agarwal" className="w-full h-full object-cover" />
+                  <img src={media.profileImage} alt="Vedant Agarwal" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <h2 className="text-4xl font-bold text-white mb-2">Experience & Certifications</h2>

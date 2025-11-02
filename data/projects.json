@@ -1,0 +1,57 @@
+{
+  "projects": [
+    {
+      "id": "1",
+      "title": "X-Ray Classification System",
+      "description": "Classifies X-ray images into pneumonia and normal categories using CNN. Built with TensorFlow/Keras on 5,000+ images, achieving 78% accuracy with 82% precision and 75% recall.",
+      "image": "https://images.unsplash.com/photo-1581595220892-b0739db3ba8c?w=800&q=80",
+      "technologies": [
+        "TensorFlow",
+        "Keras",
+        "Python",
+        "Deep Learning",
+        "CNN"
+      ],
+      "github": "https://github.com/Vedag812",
+      "demo": "https://huggingface.co/spaces/Vedag812/Image_Xray_Classification",
+      "featured": true,
+      "visible": true,
+      "category": "AI/ML"
+    },
+    {
+      "id": "2",
+      "title": "Email Spam Classifier",
+      "description": "Detects and classifies emails as spam or non-spam using ML and NLP. Implemented TF-IDF vectorization and Naive Bayes, achieving 96% accuracy with interactive Gradio interface on Hugging Face Spaces.",
+      "image": "https://images.unsplash.com/photo-1596526131083-e8c633c948d2?w=800&q=80",
+      "technologies": [
+        "Python",
+        "Scikit-learn",
+        "NLTK",
+        "Gradio",
+        "Machine Learning"
+      ],
+      "github": "https://huggingface.co/spaces/Vedag812/email_spam/tree/main",
+      "demo": "https://huggingface.co/spaces/Vedag812/email_spam",
+      "featured": true,
+      "visible": true,
+      "category": "NLP"
+    },
+    {
+      "id": "3",
+      "title": "Virtual Room Enhancer",
+      "description": "Improves room visuals and layout suggestions using generative AI. Enhanced AI-based room layouts with Google Gemini Studio, processing 100+ configurations with 95% real-time preview satisfaction.",
+      "image": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80",
+      "technologies": [
+        "Google Gemini",
+        "Generative AI",
+        "HTML/CSS",
+        "JavaScript"
+      ],
+      "github": "https://github.com/Vedag812/Virtual-room-enhacement-using-Gemini-Ai",
+      "demo": "https://virtual-room-styler-with-gemini-798380449849.us-west1.run.app/",
+      "featured": true,
+      "visible": true,
+      "category": "Generative AI"
+    }
+  ]
+}

@@ -9,6 +9,10 @@ import { AccessibilityProvider } from "@/components/accessibility-provider"
 import { ScrollProgress } from "@/components/scroll-progress"
 import { BackToTop } from "@/components/back-to-top"
 import { KeyboardNavigationHint } from "@/components/keyboard-navigation-hint"
+import { MediaConfigProvider } from "@/components/media-config-provider"
+import { getMediaConfig } from "@/lib/media"
+import { ThemeProvider } from "@/components/theme-toggle"
+import { KonamiCode } from "@/components/konami-code"
 
 export const metadata: Metadata = {
   title: "Vedant Agarwal - Portfolio",
@@ -16,20 +20,28 @@ export const metadata: Metadata = {
   generator: "v0.app",
 }
 
-export default function RootLayout({
+export const dynamic = "force-dynamic"
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const mediaConfig = await getMediaConfig()
   return (
     <html lang="en" className="dark">
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
-        <ScrollProgress />
-        <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
-        <AccessibilityProvider />
-        <BackToTop />
-        <KeyboardNavigationHint />
-        <Analytics />
+        <ThemeProvider>
+          <MediaConfigProvider initialConfig={mediaConfig}>
+            <KonamiCode />
+            <ScrollProgress />
+            <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+            <AccessibilityProvider />
+            <BackToTop />
+            <KeyboardNavigationHint />
+            <Analytics />
+          </MediaConfigProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

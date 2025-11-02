@@ -3,6 +3,8 @@
 import { Button } from "@/components/ui/button"
 import { ArrowDown, Github, Linkedin } from "lucide-react"
 import { useEffect, useState } from "react"
+import { TypingAnimation } from "./typing-animation"
+import { ParticleBackground } from "./particle-background"
 
 export function Hero() {
   const [isVisible, setIsVisible] = useState(false)
@@ -18,6 +20,8 @@ export function Hero() {
 
   return (
     <section className="min-h-screen flex items-center justify-center relative parallax-bg overflow-hidden">
+      <ParticleBackground />
+      
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-20 left-10 w-32 h-32 bg-red-500/20 rounded-full blur-xl float-animation"></div>
         <div
@@ -35,8 +39,17 @@ export function Hero() {
           <h1 className="text-6xl md:text-8xl font-bold mb-6 text-balance">
             <span className="neon-text">Vedant</span> <span className="neon-red">Agarwal</span>
           </h1>
-          <h2 className="text-2xl md:text-4xl font-semibold mb-4 gradient-text typing-animation">
-            <span className="neon-red">Aspiring Data Scientist</span> & AI Enthusiast
+          <h2 className="text-2xl md:text-4xl font-semibold mb-4 min-h-[3rem]">
+            <TypingAnimation
+              texts={[
+                "Aspiring Data Scientist 📊",
+                "AI/ML Enthusiast 🤖",
+                "Full Stack Developer 💻",
+                "Blockchain Explorer ⛓️",
+                "Campus Partner @Perplexity 🚀",
+              ]}
+              className="neon-red gradient-text-animated"
+            />
           </h2>
           <p className="text-lg md:text-xl text-gray-300 mb-8 text-pretty max-w-3xl mx-auto">
             Computer Science & Data Science Student at SRMIST | Passionate about AI, Machine Learning, and Blockchain

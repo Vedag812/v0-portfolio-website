@@ -28,3 +28,9 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+
+## Admin Media Editor
+
+- Set an `ADMIN_TOKEN` environment variable (locally in `.env.local`, and in your hosting dashboard) to secure the media editor.
+- Visit `/admin` while the dev server or deployment is running, enter the token, and update the URLs for the profile image and section backgrounds.
+- Save changes to persist them to `data/media.json`, then refresh the site to see the new assets.

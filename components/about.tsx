@@ -1,9 +1,13 @@
+"use client"
+
+import { useMediaConfig } from "@/components/media-config-provider"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Brain, Code, Database, Globe } from "lucide-react"
 import Image from "next/image"
 
 export function About() {
+  const media = useMediaConfig()
   const skills = [
     "Machine Learning",
     "Python",
@@ -24,8 +28,7 @@ export function About() {
       <div
         className="absolute inset-0 opacity-20"
         style={{
-          backgroundImage:
-            "url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/about%20me-xjVJydBNu0KiSV3aXomDkHptDnLSRq.png')",
+          backgroundImage: `url('${media.backgrounds.about}')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -52,7 +55,7 @@ export function About() {
             <div className="relative">
               <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-3 border-netflix-red shadow-xl">
                 <Image
-                  src="/vedant-profile.jpg"
+                  src={media.profileImage}
                   alt="Vedant Agarwal"
                   width={160}
                   height={160}

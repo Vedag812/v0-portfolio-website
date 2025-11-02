@@ -2,8 +2,10 @@
 
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
+import { useMediaConfig } from "@/components/media-config-provider"
 
 export const ProfileBanner = () => {
+  const media = useMediaConfig()
   const handleResumeClick = () => {
     window.open("https://github.com/Vedag812", "_blank")
   }
@@ -18,7 +20,7 @@ export const ProfileBanner = () => {
         <div className="relative">
           <div className="w-48 h-48 md:w-64 md:h-64 rounded-full overflow-hidden border-4 border-netflix-red shadow-2xl">
             <Image
-              src="/vedant-profile.jpg"
+              src={media.profileImage}
               alt="Vedant Agarwal"
               width={256}
               height={256}

@@ -3,8 +3,11 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Moon, Sun } from "lucide-react"
+import { useTheme } from "./theme-toggle"
 
 export function NetflixNavbar() {
+  const { theme, toggleTheme } = useTheme()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const router = useRouter()
@@ -48,6 +51,14 @@ export function NetflixNavbar() {
         </div>
 
         <div className="flex items-center space-x-4">
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg bg-netflix-dark-gray hover:bg-netflix-light-gray transition-colors"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5 text-blue-400" />}
+          </button>
+
           {/* Mobile menu button */}
           <button className="md:hidden text-white" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             <div className="w-6 h-6 flex flex-col justify-center space-y-1">
