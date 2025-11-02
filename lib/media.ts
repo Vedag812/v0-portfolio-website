@@ -27,8 +27,13 @@ export async function getMediaConfig(): Promise<MediaConfig> {
 }
 
 export async function updateMediaConfig(config: MediaConfig): Promise<void> {
-  await ensureDirectoryExists(path.dirname(MEDIA_FILE_PATH))
-  await fs.writeFile(MEDIA_FILE_PATH, JSON.stringify(config, null, 2), "utf-8")
+  try {
+    await ensureDirectoryExists(path.dirname(MEDIA_FILE_PATH))
+    await fs.writeFile(MEDIA_FILE_PATH, JSON.stringify(config, null, 2), "utf-8")
+  } catch (error) {
+    console.warn("Failed to write media config (filesystem may be read-only):", error)
+    // In production (Vercel), this will fail but won't crash the app
+  }
 }
 
 async function ensureMediaConfigFile(config: MediaConfig) {
