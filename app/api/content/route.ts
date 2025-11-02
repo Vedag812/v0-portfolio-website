@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server"
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 // Types for content
 interface Article {
   id: string
@@ -268,8 +271,8 @@ const generateMockContent = (): Article[] => {
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const category = searchParams.get("category")
+    const url = new URL(request.url || '', 'http://localhost')
+    const category = url.searchParams.get("category")
 
     let content = generateMockContent()
 
