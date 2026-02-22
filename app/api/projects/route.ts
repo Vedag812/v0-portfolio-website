@@ -1,49 +1,32 @@
 import { NextResponse } from "next/server"
 import fs from "fs"
 import path from "path"
-import { put, list, del } from '@vercel/blob'
+import { saveProjects, getProjects } from '@/lib/upstash-storage'
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN
-
 export async function GET() {
   try {
-    // Try Vercel Blob first (production)
-    if (BLOB_TOKEN && process.env.VERCEL) {
-      try {
-        const { blobs } = await list({ token: BLOB_TOKEN, prefix: 'portfolio-projects' })
-        if (blobs.length > 0) {
-          const latestBlob = blobs.sort((a, b) => 
-            new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
-          )[0]
-          const response = await fetch(latestBlob.url, { cache: 'no-store' })
-          if (response.ok) {
-            const data = await response.json()
-            return NextResponse.json(data, {
-              headers: {
-                'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-              }
-            })
-          }
+    // Try Upstash Redis first (production)
+    const redisData = await getProjects()
+    if (redisData) {
+      return NextResponse.json(redisData, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
         }
-      } catch (blobError) {
-        console.warn("Blob read failed, falling back to local file:", blobError)
-      }
+      })
     }
-    
-    // Fallback to local file (development or if blob fails)
+
+    // Fallback to local file (development or if Redis not configured)
     const filePath = path.join(process.cwd(), "data", "projects.json")
     const fileContents = fs.readFileSync(filePath, "utf8")
     const data = JSON.parse(fileContents)
-    
+
     return NextResponse.json(data, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-        'Pragma': 'no-cache',
-        'Expires': '0',
       }
     })
   } catch (error) {
@@ -55,68 +38,52 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
-    const adminToken = process.env.ADMIN_TOKEN || "vedant123"
+    const adminToken = process.env.ADMIN_TOKEN
 
-    if (token !== adminToken) {
+    if (!adminToken || token !== adminToken) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const data = await request.json()
     const projects = data.projects || data
-    
-    let savedToBlob = false
-    
-    // Try Vercel Blob (production)
-    if (BLOB_TOKEN && process.env.VERCEL) {
-      try {
-        // Delete old blobs
-        const { blobs } = await list({ token: BLOB_TOKEN, prefix: 'portfolio-projects' })
-        for (const blob of blobs) {
-          await del(blob.url, { token: BLOB_TOKEN })
-        }
-        
-        // Save new blob
-        const timestamp = Date.now()
-        await put(`portfolio-projects-${timestamp}.json`, JSON.stringify({ projects }, null, 2), {
-          access: 'public',
-          contentType: 'application/json',
-          token: BLOB_TOKEN,
-        })
-        
-        savedToBlob = true
-        console.log("✅ Projects saved to Vercel Blob")
-      } catch (blobError) {
-        console.warn("Blob save failed:", blobError)
-      }
+
+    let savedToRedis = false
+
+    // Try Upstash Redis (production)
+    try {
+      await saveProjects(projects)
+      savedToRedis = true
+      console.log("✅ Projects saved to Upstash Redis")
+    } catch (redisError) {
+      console.warn("Redis save failed, trying local file:", redisError)
     }
-    
-    // Always try local file save (for development or backup)
-    if (!savedToBlob) {
+
+    // Fallback to local file (development)
+    if (!savedToRedis) {
       try {
         const filePath = path.join(process.cwd(), "data", "projects.json")
         fs.writeFileSync(filePath, JSON.stringify({ projects }, null, 2))
         console.log("✅ Projects saved to local file:", filePath)
       } catch (fsError) {
-        if (process.env.VERCEL && !savedToBlob) {
-          // In production without blob storage
-          return NextResponse.json({ 
-            error: "Production save failed. Please set up Vercel Blob storage.",
-            details: "Filesystem is read-only on Vercel"
+        if (process.env.VERCEL) {
+          return NextResponse.json({
+            error: "Save failed. Please configure Upstash Redis.",
+            details: "Filesystem is read-only on Vercel and Redis is not configured."
           }, { status: 500 })
         }
         throw fsError
       }
     }
-    
-    return NextResponse.json({ 
-      success: true, 
-      message: savedToBlob ? "Saved to cloud storage" : "Saved locally",
+
+    return NextResponse.json({
+      success: true,
+      message: savedToRedis ? "Saved to Redis" : "Saved locally",
       projectCount: projects.length,
-      storage: savedToBlob ? "vercel-blob" : "local-file"
+      storage: savedToRedis ? "upstash-redis" : "local-file"
     })
   } catch (error) {
     console.error("Error updating projects:", error)
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: "Failed to update projects",
       details: String(error)
     }, { status: 500 })

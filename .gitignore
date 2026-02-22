@@ -25,3 +25,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# personal files
+*.pdf
+resume_text.txt
+PROJECTS_BACKUP.md

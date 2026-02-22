@@ -129,11 +129,10 @@ export function TechChatbot() {
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-xs px-4 py-2 rounded-lg ${
-                    message.sender === "user"
+                  className={`max-w-xs px-4 py-2 rounded-lg ${message.sender === "user"
                       ? "bg-netflix-red text-white rounded-br-none"
                       : "bg-gray-800 text-gray-100 rounded-bl-none"
-                  }`}
+                    }`}
                 >
                   <p className="text-sm">{message.text}</p>
                 </div>
@@ -165,7 +164,7 @@ export function TechChatbot() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+              onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
               placeholder="Ask about tech..."
               className="flex-1 bg-gray-800 text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-netflix-red"
             />

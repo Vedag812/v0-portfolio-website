@@ -1,10 +1,19 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 
 export function useInView(options?: IntersectionObserverInit) {
   const [isInView, setIsInView] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  // Memoize the options to prevent unnecessary re-creations of the observer
+  const threshold = options?.threshold ?? 0.2;
+  const rootMargin = options?.rootMargin;
+
+  const stableOptions = useMemo(
+    () => ({ threshold, rootMargin }),
+    [threshold, rootMargin]
+  );
 
   useEffect(() => {
     const element = ref.current;
@@ -15,17 +24,14 @@ export function useInView(options?: IntersectionObserverInit) {
         setIsInView(true);
         observer.unobserve(element);
       }
-    }, {
-      threshold: 0.2,
-      ...options,
-    });
+    }, stableOptions);
 
     observer.observe(element);
 
     return () => {
       observer.disconnect();
     };
-  }, [options]);
+  }, [stableOptions]);
 
   return { ref, isInView };
 }

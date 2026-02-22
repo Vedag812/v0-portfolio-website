@@ -3,15 +3,17 @@
 import type React from "react"
 
 import { useMediaConfig } from "@/components/media-config-provider"
+import { useSiteContent } from "@/hooks/use-site-content"
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Github, Linkedin, Mail, MapPin } from "lucide-react"
+import { Github, Linkedin, Mail, MapPin, Send, CheckCircle, XCircle } from "lucide-react"
 
 export function Contact() {
   const media = useMediaConfig()
+  const { content } = useSiteContent()
+  const ct = content?.contact
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -26,11 +28,9 @@ export function Contact() {
     setSubmitStatus("idle")
 
     try {
-      const response = await fetch("/api/send-email", {
+      const response = await fetch("/api/contact", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
 
@@ -39,11 +39,6 @@ export function Contact() {
       if (data.success) {
         setSubmitStatus("success")
         setFormData({ name: "", email: "", message: "" })
-        
-        // Open mailto link to send email
-        const subject = `Portfolio Contact: Message from ${formData.name}`
-        const body = `Name: ${formData.name}\nEmail: ${formData.email}\n\nMessage:\n${formData.message}`
-        window.location.href = `mailto:vedantagarwal039@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
       } else {
         setSubmitStatus("error")
       }
@@ -57,42 +52,71 @@ export function Contact() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
+    setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
+  const socials = [
+    {
+      icon: Github,
+      label: "GitHub",
+      href: ct?.github ?? "https://github.com/Vedag812",
+      username: "@Vedag812",
+    },
+    {
+      icon: Linkedin,
+      label: "LinkedIn",
+      href: ct?.linkedin ?? "https://www.linkedin.com/in/vedant-agarwal-36bb18142",
+      username: "Vedant Agarwal",
+    },
+    {
+      icon: Mail,
+      label: "Email",
+      href: `mailto:${ct?.email ?? "vedantagarwal039@gmail.com"}`,
+      username: ct?.email ?? "vedantagarwal039@gmail.com",
+    },
+    {
+      icon: MapPin,
+      label: "Location",
+      href: "#",
+      username: ct?.location ?? "Chennai, India",
+    },
+  ]
+
   return (
-    <section id="contact" className="py-20 relative overflow-hidden">
+    <section id="contact" className="py-16 sm:py-20 relative overflow-hidden">
       <div
-        className="absolute inset-0 opacity-15"
+        className="absolute inset-0 opacity-10"
         style={{
           backgroundImage: `url('${media.backgrounds.contact}')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-netflix-black/80 via-netflix-black/90 to-netflix-black" />
+      <div className="absolute inset-0 bg-gradient-to-b from-netflix-black via-netflix-black/95 to-netflix-black" />
 
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-balance gradient-text">Let's Connect</h2>
+      <div className="container mx-auto px-4 sm:px-6 relative z-10">
+        <div className="max-w-5xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-5xl font-bold mb-3 gradient-text">Let's Connect</h2>
+            <p className="text-gray-400 text-sm sm:text-base max-w-md mx-auto">
+              Have a project in mind or just want to say hi? Drop me a message!
+            </p>
+          </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card className="netflix-card bg-gray-900/80 border-netflix-red/30 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="text-white">Get In Touch</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid md:grid-cols-5 gap-6">
+            {/* Contact form — takes 3 columns */}
+            <div className="md:col-span-3 p-5 sm:p-6 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+              <h3 className="text-white font-semibold text-lg mb-5">Send a Message</h3>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4">
                   <Input
                     name="name"
                     placeholder="Your Name"
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                    className="bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-netflix-red/50 h-11"
                   />
                   <Input
                     name="email"
@@ -101,105 +125,68 @@ export function Contact() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
+                    className="bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-netflix-red/50 h-11"
                   />
-                  <Textarea
-                    name="message"
-                    placeholder="Your Message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    required
-                    rows={4}
-                    className="bg-gray-800 border-gray-700 text-white placeholder-gray-400"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full bg-netflix-red hover:bg-netflix-red/90 text-white transition-all"
-                  >
-                    {isLoading ? "Sending..." : "Send Message"}
-                  </Button>
-                  {submitStatus === "success" && (
-                    <div className="p-3 bg-green-500/20 border border-green-500/50 rounded-lg animate-slide-up">
-                      <p className="text-green-400 text-sm font-semibold">✅ Message sent successfully! I'll get back to you soon.</p>
-                    </div>
+                </div>
+                <Textarea
+                  name="message"
+                  placeholder="Your Message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  required
+                  rows={5}
+                  className="bg-white/5 border-white/10 text-white placeholder-gray-500 focus:border-netflix-red/50 resize-none"
+                />
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-netflix-red hover:bg-netflix-red/90 text-white h-11 font-medium transition-all"
+                >
+                  {isLoading ? (
+                    "Sending..."
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Send className="h-4 w-4" />
+                      Send Message
+                    </span>
                   )}
-                  {submitStatus === "error" && (
-                    <div className="p-3 bg-red-500/20 border border-red-500/50 rounded-lg animate-slide-up">
-                      <p className="text-red-400 text-sm font-semibold">❌ Failed to send message. Please try again.</p>
-                    </div>
-                  )}
-                </form>
-              </CardContent>
-            </Card>
+                </Button>
 
-            <Card className="netflix-card bg-gray-900/80 border-netflix-red/30 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="text-white">Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center">
-                  <Mail className="h-5 w-5 text-netflix-red mr-3" />
-                  <div>
-                    <p className="font-medium text-white">Email</p>
-                    <a
-                      href="mailto:vedantagarwal039@gmail.com"
-                      className="text-gray-300 hover:text-netflix-red transition-colors"
-                    >
-                      vedantagarwal039@gmail.com
-                    </a>
+                {submitStatus === "success" && (
+                  <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                    <CheckCircle className="h-4 w-4 text-green-400 shrink-0" />
+                    <p className="text-green-400 text-sm">Message sent! I'll get back to you soon.</p>
                   </div>
-                </div>
+                )}
+                {submitStatus === "error" && (
+                  <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                    <XCircle className="h-4 w-4 text-red-400 shrink-0" />
+                    <p className="text-red-400 text-sm">Failed to send. Please try again.</p>
+                  </div>
+                )}
+              </form>
+            </div>
 
-                <div className="flex items-center">
-                  <MapPin className="h-5 w-5 text-netflix-red mr-3" />
-                  <div>
-                    <p className="font-medium text-white">Location</p>
-                    <p className="text-gray-300">Kolkata, West Bengal, India</p>
+            {/* Contact info — takes 2 columns */}
+            <div className="md:col-span-2 space-y-3">
+              {socials.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target={social.href.startsWith("http") || social.href.startsWith("mailto") || social.href.startsWith("tel") ? "_blank" : undefined}
+                  rel={social.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                  className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.15] hover:bg-white/[0.04] transition-all group"
+                >
+                  <div className="p-2.5 rounded-lg bg-netflix-red/10 group-hover:bg-netflix-red/20 transition-colors">
+                    <social.icon className="h-5 w-5 text-netflix-red" />
                   </div>
-                </div>
-
-                <div className="pt-4">
-                  <p className="font-medium mb-3 text-white">Connect with me</p>
-                  <div className="flex gap-3">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      asChild
-                      className="border-netflix-red/50 hover:bg-netflix-red/10 bg-transparent"
-                    >
-                      <a href="https://github.com/Vedag812" target="_blank" rel="noopener noreferrer">
-                        <Github className="h-4 w-4 text-netflix-red" />
-                      </a>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      asChild
-                      className="border-netflix-red/50 hover:bg-netflix-red/10 bg-transparent"
-                    >
-                      <a
-                        href="https://www.linkedin.com/in/vedant-agarwal-36bb18142"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Linkedin className="h-4 w-4 text-netflix-red" />
-                      </a>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      asChild
-                      className="border-netflix-red/50 hover:bg-netflix-red/10 bg-transparent"
-                    >
-                      <a href="mailto:vedantagarwal039@gmail.com">
-                        <Mail className="h-4 w-4 text-netflix-red" />
-                      </a>
-                    </Button>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-500 uppercase tracking-wider font-medium">{social.label}</p>
+                    <p className="text-sm text-white truncate">{social.username}</p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </div>

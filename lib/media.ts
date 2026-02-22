@@ -3,12 +3,24 @@ import "server-only"
 import path from "path"
 import { promises as fs } from "fs"
 import { DEFAULT_MEDIA_CONFIG, type MediaConfig, type MediaSectionKey } from "@/lib/media-config"
+import { getMediaConfig as getRedisMediaConfig } from "@/lib/upstash-storage"
 
 const MEDIA_FILE_PATH = path.join(process.cwd(), "data", "media.json")
 
 export const MEDIA_SECTION_KEYS: MediaSectionKey[] = ["about", "skills", "projectsFeatured", "experience", "contact"]
 
 export async function getMediaConfig(): Promise<MediaConfig> {
+  // 1. Try Upstash Redis first (works on Vercel production)
+  try {
+    const redisConfig = await getRedisMediaConfig()
+    if (redisConfig && isMediaConfig(redisConfig)) {
+      return redisConfig
+    }
+  } catch (error) {
+    console.warn("Redis read failed, falling back to local file:", error)
+  }
+
+  // 2. Try local file (development)
   try {
     const file = await fs.readFile(MEDIA_FILE_PATH, "utf-8")
     const parsed = JSON.parse(file) as unknown
@@ -20,11 +32,9 @@ export async function getMediaConfig(): Promise<MediaConfig> {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
       console.error("Failed to read media configuration:", error)
     }
-    // On Vercel, just return defaults if file doesn't exist
-    return DEFAULT_MEDIA_CONFIG
   }
 
-  // Don't try to create files on serverless - return defaults
+  // 3. Return defaults
   return DEFAULT_MEDIA_CONFIG
 }
 
@@ -34,8 +44,7 @@ export async function updateMediaConfig(config: MediaConfig): Promise<void> {
   try {
     await fs.writeFile(MEDIA_FILE_PATH, JSON.stringify(config, null, 2), "utf-8")
   } catch (error) {
-    console.warn("Failed to write media config (filesystem is read-only on Vercel):", error)
-    // Don't throw error - just log warning
+    console.warn("Failed to write media config (filesystem may be read-only):", error)
   }
 }
 
@@ -53,7 +62,6 @@ export function isMediaConfig(value: unknown): value is MediaConfig {
     return false
   }
 
-  // Validate each profile has required structure
   const profileKeys = Object.keys(candidate.profiles) as Array<keyof typeof candidate.profiles>
   return profileKeys.every((profileKey) => {
     const profile = candidate.profiles[profileKey]

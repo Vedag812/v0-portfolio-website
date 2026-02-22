@@ -2,16 +2,11 @@
 
 import { Button } from "@/components/ui/button"
 import { ArrowDown, Github, Linkedin } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Reveal } from "./ui/scroll-reveal"
 import { TypingAnimation } from "./typing-animation"
 import { ParticleBackground } from "./particle-background"
 
 export function Hero() {
-  const [isVisible, setIsVisible] = useState(false)
-
-  useEffect(() => {
-    setIsVisible(true)
-  }, [])
 
   const scrollToProjects = () => {
     const element = document.getElementById("projects")
@@ -35,7 +30,7 @@ export function Hero() {
       </div>
 
       <div className="container mx-auto px-6 text-center relative z-10">
-        <div className={`max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? "fade-in-up" : "opacity-0"}`}>
+        <Reveal className="max-w-4xl mx-auto">
           <h1 className="text-6xl md:text-8xl font-bold mb-6 text-balance">
             <span className="neon-text">Vedant</span> <span className="neon-red">Agarwal</span>
           </h1>
@@ -94,7 +89,7 @@ export function Hero() {
                 </a>
               </Button>
             </div>
-          </div>
+          </Reveal>
         </div>
       </div>
 

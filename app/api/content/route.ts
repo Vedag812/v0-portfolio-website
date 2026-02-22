@@ -1,296 +1,251 @@
 import { NextResponse } from "next/server"
+import { Redis } from "@upstash/redis"
+import fs from "fs"
+import path from "path"
 
-// Force dynamic rendering
+const redis = Redis.fromEnv()
+const CONTENT_KEY = "site-content"
+
+export interface SiteContent {
+  about: {
+    name: string
+    tagline: string
+    bio: string
+    cgpa: string
+    college: string
+    degree: string
+    period: string
+    coursework: string
+    expertise: string
+    skills: string[]
+    languages: string[]
+  }
+  experiences: {
+    title: string
+    company: string
+    period: string
+    location: string
+    description: string[]
+    type: string
+  }[]
+  achievements: {
+    title: string
+    detail: string
+  }[]
+  certifications: string[]
+  skills: {
+    title: string
+    icon: string
+    color: string
+    skills: { name: string; level: number }[]
+  }[]
+  contact: {
+    email: string
+    linkedin: string
+    github: string
+    location: string
+    huggingface?: string
+  }
+}
+
+// Disable caching
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
-// Types for content
-interface Article {
-  id: string
-  title: string
-  description: string
-  url: string
-  image: string
-  source: string
-  publishedAt: string
-  category: "ai" | "tech" | "dev" | "linkedin" | "movies"
-  rating?: number
-  genre?: string
-}
-
-// Mock data - In production, you'd fetch from real APIs
-const generateMockContent = (): Article[] => {
-  const aiArticles: Article[] = [
-    {
-      id: "ai-1",
-      title: "GPT-5 Breakthrough: OpenAI's Next Generation Model",
-      description: "OpenAI announces major advancements in their latest language model with improved reasoning capabilities.",
-      url: "https://openai.com/blog",
-      image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80",
-      source: "OpenAI Blog",
-      publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      category: "ai",
-    },
-    {
-      id: "ai-2",
-      title: "Machine Learning in Healthcare: Predicting Patient Outcomes",
-      description: "How AI models are revolutionizing early disease detection and treatment planning.",
-      url: "https://nature.com/articles/ai",
-      image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=800&q=80",
-      source: "Nature AI",
-      publishedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-      category: "ai",
-    },
-    {
-      id: "ai-3",
-      title: "Computer Vision Advances in Autonomous Vehicles",
-      description: "New neural network architectures improve object detection accuracy by 40%.",
-      url: "https://arxiv.org/ai",
-      image: "https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&q=80",
-      source: "arXiv",
-      publishedAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-      category: "ai",
-    },
-    {
-      id: "ai-4",
-      title: "Transformers vs. Diffusion Models: Which is Better?",
-      description: "A comprehensive comparison of modern generative AI architectures.",
-      url: "https://towardsdatascience.com",
-      image: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&q=80",
-      source: "Towards Data Science",
-      publishedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-      category: "ai",
-    },
-  ]
-
-  const techBlogs: Article[] = [
-    {
-      id: "tech-1",
-      title: "Next.js 15: The Future of React Development",
-      description: "Exploring the new features and performance improvements in Next.js 15.",
-      url: "https://nextjs.org/blog",
-      image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
-      source: "Vercel Blog",
-      publishedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-      category: "tech",
-    },
-    {
-      id: "tech-2",
-      title: "Rust in Production: Why Companies are Making the Switch",
-      description: "Performance, safety, and developer experience driving Rust adoption.",
-      url: "https://blog.rust-lang.org",
-      image: "https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800&q=80",
-      source: "Rust Blog",
-      publishedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-      category: "tech",
-    },
-    {
-      id: "tech-3",
-      title: "WebAssembly: Running Native Code in the Browser",
-      description: "How WASM is changing the landscape of web application development.",
-      url: "https://webassembly.org/blog",
-      image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
-      source: "WebAssembly",
-      publishedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-      category: "tech",
-    },
-    {
-      id: "tech-4",
-      title: "Quantum Computing: From Theory to Practice",
-      description: "Latest breakthroughs in quantum algorithms and error correction.",
-      url: "https://quantum-computing.ibm.com",
-      image: "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&q=80",
-      source: "IBM Quantum",
-      publishedAt: new Date(Date.now() - 10 * 60 * 60 * 1000).toISOString(),
-      category: "tech",
-    },
-  ]
-
-  const devNews: Article[] = [
-    {
-      id: "dev-1",
-      title: "GitHub Copilot X: AI-Powered Coding Assistant Evolution",
-      description: "New features including chat, voice commands, and pull request summaries.",
-      url: "https://github.blog/copilot",
-      image: "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?w=800&q=80",
-      source: "GitHub Blog",
-      publishedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-      category: "dev",
-    },
-    {
-      id: "dev-2",
-      title: "TypeScript 5.5 Released with Major Performance Improvements",
-      description: "Faster type checking and new language features announced.",
-      url: "https://devblogs.microsoft.com/typescript",
-      image: "https://images.unsplash.com/photo-1587620962725-abab7fe55159?w=800&q=80",
-      source: "Microsoft",
-      publishedAt: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
-      category: "dev",
-    },
-    {
-      id: "dev-3",
-      title: "Docker Desktop 5.0: Kubernetes Made Easy",
-      description: "Simplified container orchestration with new GUI tools.",
-      url: "https://docker.com/blog",
-      image: "https://images.unsplash.com/photo-1605745341112-85968b19335b?w=800&q=80",
-      source: "Docker",
-      publishedAt: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(),
-      category: "dev",
-    },
-    {
-      id: "dev-4",
-      title: "Serverless Architecture: Best Practices in 2025",
-      description: "Cost optimization and performance tuning for cloud functions.",
-      url: "https://aws.amazon.com/blogs",
-      image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80",
-      source: "AWS Blog",
-      publishedAt: new Date(Date.now() - 11 * 60 * 60 * 1000).toISOString(),
-      category: "dev",
-    },
-  ]
-
-  const linkedinPosts: Article[] = [
-    {
-      id: "linkedin-1",
-      title: "Top 10 Skills Every Data Scientist Needs in 2025",
-      description: "Industry leaders share insights on the most valuable skills for data science careers.",
-      url: "https://linkedin.com/pulse",
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&q=80",
-      source: "LinkedIn",
-      publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      category: "linkedin",
-    },
-    {
-      id: "linkedin-2",
-      title: "Breaking Into Tech: A Complete Roadmap",
-      description: "From bootcamps to FAANG: A comprehensive guide for career switchers.",
-      url: "https://linkedin.com/pulse",
-      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80",
-      source: "LinkedIn",
-      publishedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-      category: "linkedin",
-    },
-    {
-      id: "linkedin-3",
-      title: "Remote Work: Productivity Tips from Top Developers",
-      description: "Best practices for maintaining work-life balance while coding from home.",
-      url: "https://linkedin.com/pulse",
-      image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=80",
-      source: "LinkedIn",
-      publishedAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-      category: "linkedin",
-    },
-    {
-      id: "linkedin-4",
-      title: "Building a Personal Brand in Tech",
-      description: "How to stand out on LinkedIn and attract recruiters.",
-      url: "https://linkedin.com/pulse",
-      image: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&q=80",
-      source: "LinkedIn",
-      publishedAt: new Date(Date.now() - 13 * 60 * 60 * 1000).toISOString(),
-      category: "linkedin",
-    },
-  ]
-
-  const movieRecommendations: Article[] = [
-    {
-      id: "movie-1",
-      title: "The Social Network (2010)",
-      description: "The story of Facebook's founding and the legal battles that followed. A must-watch for tech entrepreneurs.",
-      url: "https://www.imdb.com/title/tt1285016/",
-      image: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&q=80",
-      source: "Tech Drama",
-      publishedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-      category: "movies",
-      rating: 7.8,
-      genre: "Biography/Drama",
-    },
-    {
-      id: "movie-2",
-      title: "Ex Machina (2014)",
-      description: "A thought-provoking exploration of artificial intelligence and consciousness.",
-      url: "https://www.imdb.com/title/tt0470752/",
-      image: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800&q=80",
-      source: "Sci-Fi",
-      publishedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-      category: "movies",
-      rating: 7.7,
-      genre: "Sci-Fi/Thriller",
-    },
-    {
-      id: "movie-3",
-      title: "The Imitation Game (2014)",
-      description: "Alan Turing's groundbreaking work in cryptography during WWII. The father of computer science.",
-      url: "https://www.imdb.com/title/tt2084970/",
-      image: "https://images.unsplash.com/photo-1509395176047-4a66953fd231?w=800&q=80",
-      source: "Historical",
-      publishedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-      category: "movies",
-      rating: 8.0,
-      genre: "Biography/Drama",
-    },
-    {
-      id: "movie-4",
-      title: "Silicon Valley (TV Series)",
-      description: "A hilarious and accurate portrayal of startup culture in the tech industry.",
-      url: "https://www.imdb.com/title/tt2575988/",
-      image: "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?w=800&q=80",
-      source: "Comedy",
-      publishedAt: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(),
-      category: "movies",
-      rating: 8.5,
-      genre: "Comedy/Tech",
-    },
-    {
-      id: "movie-5",
-      title: "Her (2013)",
-      description: "A lonely man develops a relationship with an AI operating system. Explores human-AI interaction.",
-      url: "https://www.imdb.com/title/tt1798709/",
-      image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80",
-      source: "Sci-Fi Romance",
-      publishedAt: new Date(Date.now() - 11 * 60 * 60 * 1000).toISOString(),
-      category: "movies",
-      rating: 8.0,
-      genre: "Sci-Fi/Romance",
-    },
-    {
-      id: "movie-6",
-      title: "Steve Jobs (2015)",
-      description: "Behind-the-scenes look at three iconic product launches that shaped Apple's history.",
-      url: "https://www.imdb.com/title/tt2080374/",
-      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80",
-      source: "Biography",
-      publishedAt: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString(),
-      category: "movies",
-      rating: 7.2,
-      genre: "Biography/Drama",
-    },
-  ]
-
-  return [...aiArticles, ...techBlogs, ...devNews, ...linkedinPosts, ...movieRecommendations]
-}
-
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const url = new URL(request.url || '', 'http://localhost')
-    const category = url.searchParams.get("category")
+    // Try Redis first
+    const content = await redis.get<SiteContent>(CONTENT_KEY)
+    if (content) return NextResponse.json(content)
+  } catch (error) {
+    console.warn("Redis fetch failed for content:", error)
+  }
 
-    let content = generateMockContent()
+  // Fallback: try local file
+  try {
+    const filePath = path.join(process.cwd(), "data", "content.json")
+    if (fs.existsSync(filePath)) {
+      const data = JSON.parse(fs.readFileSync(filePath, "utf8"))
+      return NextResponse.json(data)
+    }
+  } catch { }
 
-    // Filter by category if specified
-    if (category && category !== "all") {
-      content = content.filter((article) => article.category === category)
+  // Final fallback: defaults
+  return NextResponse.json(getDefaultContent())
+}
+
+export async function POST(request: Request) {
+  try {
+    // Accept both auth modes for compatibility
+    const xToken = request.headers.get("x-admin-token")
+    const bearerToken = request.headers.get("authorization")?.replace("Bearer ", "")
+    const token = xToken || bearerToken
+
+    if (!token || token !== process.env.ADMIN_TOKEN) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Sort by published date (newest first)
-    content.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+    const content: SiteContent = await request.json()
 
-    return NextResponse.json({
-      success: true,
-      data: content,
-      lastUpdated: new Date().toISOString(),
-    })
+    // Save to Redis
+    let savedToRedis = false
+    try {
+      await redis.set(CONTENT_KEY, content)
+      savedToRedis = true
+    } catch (redisError) {
+      console.warn("Redis save failed for content:", redisError)
+    }
+
+    // Also save locally as backup
+    try {
+      const filePath = path.join(process.cwd(), "data", "content.json")
+      fs.writeFileSync(filePath, JSON.stringify(content, null, 2))
+    } catch { }
+
+    return NextResponse.json({ success: true, storage: savedToRedis ? "redis" : "local" })
   } catch (error) {
-    console.error("Error fetching content:", error)
-    return NextResponse.json({ success: false, error: "Failed to fetch content" }, { status: 500 })
+    console.error("Failed to save site content:", error)
+    return NextResponse.json({ error: "Failed to save" }, { status: 500 })
+  }
+}
+
+function getDefaultContent(): SiteContent {
+  return {
+    about: {
+      name: "Vedant Agarwal",
+      tagline: "Data Science & AI/ML • Full Stack Developer • B.Tech CSE (DS) @ SRMIST",
+      bio: "Data Science undergraduate with hands-on experience in end-to-end analytics — from SQL-based data engineering and Python-driven ETL pipelines to machine learning model development and Power BI / Tableau dashboards. Keen interest in digital and data-driven transformation within financial services, banking, and capital markets sectors.",
+      cgpa: "9.2 / 10.0",
+      college: "SRM Institute of Science and Technology",
+      degree: "B.Tech in Computer Science (Data Science)",
+      period: "Aug 2024 – May 2028",
+      coursework: "Data Structures & Algorithms, Machine Learning, Database Management Systems, Probability & Statistics, Statistical Analysis, Quantitative Methods",
+      expertise: "Strong analytical and problem-solving skills developed through consulting-style simulations (Deloitte, British Airways) and cross-functional team projects. Proven ability to work with large, structured datasets, apply advanced statistical methods (hypothesis testing, regression, classification), and translate findings into clear stakeholder reports and slide decks.",
+      skills: ["Python", "SQL", "TensorFlow", "Scikit-learn", "Pandas", "NumPy", "Power BI", "Tableau", "React.js", "NLP", "Machine Learning", "Data Science", "Generative AI", "Deep Learning", "ETL Pipelines"],
+      languages: ["English", "Hindi", "Bengali", "Japanese"],
+    },
+    experiences: [
+      {
+        title: "Data Science and Analytics Intern",
+        company: "Future Interns",
+        period: "Dec 2025 – Jan 2026",
+        location: "Remote",
+        description: [
+          "Engineered interactive Power BI dashboards consolidating 50,000+ e-commerce transactions, uncovering 3 revenue gaps adopted into Q1 2026 strategy — contributing to a 12% improvement in campaign ROI",
+          "Automated a daily ETL pipeline in Python (Pandas, NumPy) merging data from 3 heterogeneous sources (CSV, REST APIs, MySQL), cutting reporting time from 4 hours to 15 minutes",
+          "Performed NLP sentiment analysis on 1,000+ customer reviews using NLTK, TextBlob, and TF-IDF, achieving 92% accuracy",
+          "Applied hypothesis testing and EDA to identify statistically significant trends; presented graphs and reports to non-technical stakeholders",
+        ],
+        type: "Internship",
+      },
+      {
+        title: "Full-Stack Development Volunteer",
+        company: "Directorate of Student Affairs, SRMIST",
+        period: "Dec 2024 – Apr 2025",
+        location: "Chennai, India",
+        description: [
+          "Collaborated within an 8-member cross-functional team to build the Milan college fest web platform (React.js, Node.js, Supabase), supporting 10,000+ student registrations across 50+ events",
+          "Optimised platform performance via code splitting and lazy loading, reducing page load time by 36% (4.2s → 2.7s)",
+        ],
+        type: "Club Activity",
+      },
+    ],
+    achievements: [
+      {
+        title: "Harvard HPAIR Delegate",
+        detail: "Selected among participants from 70+ countries for the Harvard Project for Asian and International Relations conference",
+      },
+      {
+        title: "Smart India Hackathon 2024",
+        detail: "Qualified for national-level government hackathon run by India's Ministry of Education, competing among 100,000+ student teams",
+      },
+    ],
+    certifications: [
+      "Data Analyst Associate — DataCamp",
+      "British Airways — Data Science Simulation (Forage)",
+      "Deloitte — Data Analytics Simulation (Forage)",
+      "Google Generative AI Workshop & Hackathon (Kaggle)",
+      "SQL for Data Science (DataCamp)",
+    ],
+    skills: [
+      {
+        title: "Programming Languages",
+        icon: "Code",
+        color: "text-blue-400",
+        skills: [
+          { name: "Python", level: 92 },
+          { name: "SQL (PostgreSQL, MySQL)", level: 88 },
+          { name: "JavaScript", level: 80 },
+          { name: "C / C++", level: 70 },
+          { name: "Java", level: 65 },
+        ],
+      },
+      {
+        title: "Data Analysis & Statistics",
+        icon: "BarChart3",
+        color: "text-emerald-400",
+        skills: [
+          { name: "Pandas / NumPy", level: 92 },
+          { name: "EDA & Data Wrangling", level: 90 },
+          { name: "Hypothesis Testing / A/B Testing", level: 85 },
+          { name: "Statistical & Quantitative Analysis", level: 85 },
+          { name: "Data Mining & Modelling", level: 80 },
+        ],
+      },
+      {
+        title: "Machine Learning & NLP",
+        icon: "Brain",
+        color: "text-red-400",
+        skills: [
+          { name: "Scikit-learn / XGBoost", level: 88 },
+          { name: "TensorFlow / Keras", level: 82 },
+          { name: "NLTK / TF-IDF / TextBlob", level: 85 },
+          { name: "Feature Engineering", level: 80 },
+          { name: "Transformers & Sentiment Analysis", level: 75 },
+        ],
+      },
+      {
+        title: "Visualization & Reporting",
+        icon: "Database",
+        color: "text-amber-400",
+        skills: [
+          { name: "Power BI", level: 88 },
+          { name: "Tableau", level: 82 },
+          { name: "Matplotlib / Seaborn / Plotly", level: 85 },
+          { name: "Dashboard Design", level: 80 },
+          { name: "Stakeholder Presentations", level: 85 },
+        ],
+      },
+      {
+        title: "Cloud & Tools",
+        icon: "Globe",
+        color: "text-purple-400",
+        skills: [
+          { name: "GCP (Google Cloud)", level: 70 },
+          { name: "Git / GitHub", level: 90 },
+          { name: "Jupyter / Google Colab", level: 92 },
+          { name: "ETL Pipelines / REST APIs", level: 80 },
+          { name: "Supabase / Gradio", level: 75 },
+        ],
+      },
+      {
+        title: "Web Development",
+        icon: "Code",
+        color: "text-cyan-400",
+        skills: [
+          { name: "React.js / Next.js", level: 82 },
+          { name: "Node.js", level: 72 },
+          { name: "HTML / CSS / Tailwind", level: 88 },
+          { name: "TypeScript", level: 75 },
+        ],
+      },
+    ],
+    contact: {
+      email: "vedantagarwal039@gmail.com",
+      linkedin: "https://www.linkedin.com/in/vedant-agarwal-36bb18142",
+      github: "https://github.com/Vedag812",
+      location: "Chennai, India",
+      huggingface: "https://huggingface.co/Vedag812",
+    },
   }
 }

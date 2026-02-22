@@ -13,7 +13,7 @@
       "demo": "https://mini-calculator-blue.vercel.app/",
       "featured": false,
       "visible": true,
-      "category": "Web Development"
+      "category": "Full Stack"
     },
     {
       "id": "1",
@@ -36,14 +36,15 @@
     {
       "id": "2",
       "title": "Email Spam Classifier",
-      "description": "Detects and classifies emails as spam or non-spam using ML and NLP. Implemented TF-IDF vectorization and Naive Bayes, achieving 96% accuracy with interactive Gradio interface on Hugging Face Spaces.",
+      "description": "Detects and classifies emails as spam or non-spam using ML and NLP. Implemented TF-IDF vectorization and Naive Bayes, achieving 96% accuracy (95% precision, 97% recall). Applied lemmatisation and bi-gram feature engineering to push F1-score from 89% to 96%. Deployed on Hugging Face with 10ms average inference.",
       "image": "https://images.unsplash.com/photo-1596526131083-e8c633c948d2?w=800&q=80",
       "technologies": [
         "Python",
         "Scikit-learn",
         "NLTK",
         "Gradio",
-        "Machine Learning"
+        "SQL",
+        "TF-IDF"
       ],
       "github": "https://huggingface.co/spaces/Vedag812/email_spam/tree/main",
       "demo": "https://huggingface.co/spaces/Vedag812/email_spam",
@@ -66,7 +67,81 @@
       "demo": "https://virtual-room-styler-with-gemini-798380449849.us-west1.run.app/",
       "featured": true,
       "visible": true,
-      "category": "Generative AI"
+      "category": "AI/ML"
+    },
+    {
+      "id": "ds01",
+      "title": "E-Commerce Sales Dashboard",
+      "description": "Interactive Power BI dashboard analyzing e-commerce sales across multiple countries — 11M quantity, 6K customers, 37K orders, 18M revenue. Features YoY revenue comparison, geographic distribution maps, and country performance breakdowns. UK dominates with 83% of total revenue.",
+      "image": "/images/projects/ecommerce-dashboard.png",
+      "technologies": [
+        "Power BI",
+        "DAX",
+        "Power Query",
+        "Data Visualization",
+        "E-Commerce Analytics"
+      ],
+      "github": "https://github.com/Vedag812/FUTURE_DS_01",
+      "demo": "",
+      "featured": true,
+      "visible": true,
+      "category": "Data Science"
+    },
+    {
+      "id": "ds02",
+      "title": "Facebook Ads Analytics Dashboard",
+      "description": "Power BI dashboard for Facebook ad campaign analysis — profit by gender, CTR by age group, conversion rate tracking, and ROI analysis. Includes revenue vs spend vs profit comparisons, scatter plot trends, and interactive campaign filters for data-driven marketing decisions.",
+      "image": "/images/projects/facebook-analytics.png",
+      "technologies": [
+        "Power BI",
+        "DAX",
+        "Marketing Analytics",
+        "Data Visualization",
+        "Facebook Ads"
+      ],
+      "github": "https://github.com/Vedag812/FUTURE_DS_02",
+      "demo": "",
+      "featured": true,
+      "visible": true,
+      "category": "Data Science"
+    },
+    {
+      "id": "ds03",
+      "title": "Student Feedback NLP Analyzer",
+      "description": "NLP-powered student feedback analysis system — sentiment classification, satisfaction scoring, and department performance dashboards. Processes 1,000+ survey responses using NLTK and TextBlob, achieving 94% accuracy. Produces interactive visualizations (word clouds, heat maps, trend charts) cutting review time by 75%.",
+      "image": "/images/projects/student-feedback.png",
+      "technologies": [
+        "Python",
+        "NLTK",
+        "TextBlob",
+        "Pandas",
+        "Plotly",
+        "Tableau"
+      ],
+      "github": "https://github.com/Vedag812/FUTURE_DS_03",
+      "demo": "",
+      "featured": true,
+      "visible": true,
+      "category": "NLP"
+    },
+    {
+      "id": "krishisevak",
+      "title": "KrishiSevak — AI Agricultural Platform",
+      "description": "Led a 6-member team to architect an AI precision farming platform on GCP. Trained ensemble models (Random Forest, Gradient Boosting, Neural Networks) on structured crop and soil datasets, improving yield prediction accuracy by 10% over baseline across 500+ crop-region combinations. Integrated Google Earth Engine satellite imagery with live weather and soil APIs.",
+      "image": "/images/projects/aiml.png",
+      "technologies": [
+        "TensorFlow",
+        "Python",
+        "React.js",
+        "GCP",
+        "SQL",
+        "Supabase"
+      ],
+      "github": "https://github.com/Vedag812",
+      "demo": "",
+      "featured": true,
+      "visible": true,
+      "category": "AI/ML"
     }
   ]
 }

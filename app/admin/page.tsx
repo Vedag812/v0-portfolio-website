@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { 
-  LogOut, Save, Plus, Trash2, Edit2, Eye, EyeOff, Star, StarOff, 
-  Github, ExternalLink, X, Image as ImageIcon, FolderOpen, 
+import {
+  LogOut, Save, Plus, Trash2, Edit2, Eye, EyeOff, Star, StarOff,
+  Github, ExternalLink, X, Image as ImageIcon, FolderOpen,
   Activity, TrendingUp, Code2, Copy, RefreshCw, Upload, Download,
-  Sun, Moon
+  Sun, Moon, Check, Circle, FileText, Briefcase, GraduationCap,
+  Mail, MapPin, Award
 } from "lucide-react"
 import type { MediaConfig, MediaSectionKey, ProfileType } from "@/lib/media-config"
 import { DEFAULT_MEDIA_CONFIG, MEDIA_SECTION_LABELS, PROFILE_LABELS } from "@/lib/media-config"
@@ -39,9 +40,9 @@ const PROFILE_KEYS = Object.keys(PROFILE_LABELS) as ProfileType[]
 export default function AdminDashboard() {
   const [storedToken, setStoredToken] = useState<string | null>(null)
   const [loginToken, setLoginToken] = useState("")
-  const [activeTab, setActiveTab] = useState<"overview" | "projects" | "media">("overview")
+  const [activeTab, setActiveTab] = useState<"overview" | "projects" | "github" | "content" | "media">("overview")
   const [theme, setTheme] = useState<"dark" | "light">("dark")
-  
+
   // Projects State
   const [projects, setProjects] = useState<Project[]>([])
   const [isLoadingProjects, setIsLoadingProjects] = useState(false)
@@ -49,18 +50,19 @@ export default function AdminDashboard() {
   const [editingProject, setEditingProject] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Project | null>(null)
   const [newTech, setNewTech] = useState("")
-  
+
   // Media State
   const [mediaConfig, setMediaConfig] = useState<MediaConfig>(DEFAULT_MEDIA_CONFIG)
   const [isLoadingMedia, setIsLoadingMedia] = useState(false)
   const [isSavingMedia, setIsSavingMedia] = useState(false)
   const [expandedProfile, setExpandedProfile] = useState<ProfileType | null>("recruiter")
   const [showPreviews, setShowPreviews] = useState(true)
-  
-  // GitHub/HuggingFace Stats
-  const [githubProjects, setGithubProjects] = useState<any[]>([])
-  const [hfProjects, setHfProjects] = useState<any[]>([])
-  
+
+  // GitHub Import
+  const [githubRepos, setGithubRepos] = useState<any[]>([])
+  const [isLoadingGithub, setIsLoadingGithub] = useState(false)
+  const [githubSearch, setGithubSearch] = useState("")
+
   // Status
   const [status, setStatus] = useState<StatusMessage | null>(null)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
@@ -97,8 +99,6 @@ export default function AdminDashboard() {
       const mediaData = await mediaRes.json()
 
       setProjects(projectsData.projects || [])
-      setGithubProjects([]) // No longer fetching GitHub projects
-      setHfProjects([]) // No longer fetching HuggingFace projects
       setMediaConfig(mediaData)
     } catch (error) {
       console.error(error)
@@ -118,15 +118,14 @@ export default function AdminDashboard() {
     setIsLoggingIn(true)
     setStatus({ type: "info", text: "Verifying password..." })
 
-    // Verify token by making a test API request
+    // Verify token via safe endpoint (does NOT modify data)
     try {
-      const response = await fetch("/api/projects", {
+      const response = await fetch("/api/verify", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${loginToken.trim()}`
         },
-        body: JSON.stringify({ projects: [] }),
       })
 
       if (response.status === 401) {
@@ -165,29 +164,29 @@ export default function AdminDashboard() {
   const handleSaveProjects = async () => {
     if (!storedToken) return
     setIsSavingProjects(true)
-    
+
     console.log("💾 Saving projects:", projects.length, "total projects")
     console.log("Visible projects:", projects.filter(p => p.visible).length)
     console.log("Hidden projects:", projects.filter(p => !p.visible).length)
-    
+
     try {
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${storedToken}` },
         body: JSON.stringify({ projects }),
       })
-      
+
       const result = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(result.error || "Failed to save")
       }
-      
+
       console.log("✅ Save response:", result)
-      
+
       // Force refresh the projects data
       await fetch("/api/projects", { cache: "no-store" })
-      
+
       setStatus({ type: "success", text: `✅ Saved ${result.projectCount} projects! Refresh /projects page to see changes.` })
       setTimeout(() => setStatus(null), 5000)
     } catch (error) {
@@ -357,8 +356,8 @@ export default function AdminDashboard() {
               onKeyPress={(e) => e.key === 'Enter' && !isLoggingIn && handleLogin()}
               disabled={isLoggingIn}
             />
-            <Button 
-              onClick={handleLogin} 
+            <Button
+              onClick={handleLogin}
               className="w-full bg-netflix-red hover:bg-netflix-red/90"
               disabled={isLoggingIn}
             >
@@ -383,15 +382,15 @@ export default function AdminDashboard() {
               <p className={`text-sm mt-1 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>Manage your portfolio</p>
             </div>
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 className={theme === "dark" ? "border-netflix-red/30" : "border-gray-300"}
               >
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
@@ -408,18 +407,19 @@ export default function AdminDashboard() {
             {[
               { id: "overview", label: "Overview", icon: Activity },
               { id: "projects", label: "Projects", icon: Code2 },
+              { id: "github", label: "GitHub Import", icon: Github },
+              { id: "content", label: "Content CMS", icon: FileText },
               { id: "media", label: "Media & Images", icon: ImageIcon }
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? "bg-netflix-red text-white shadow-lg shadow-netflix-red/30"
-                    : theme === "dark"
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all whitespace-nowrap ${activeTab === tab.id
+                  ? "bg-netflix-red text-white shadow-lg shadow-netflix-red/30"
+                  : theme === "dark"
                     ? "bg-netflix-light-gray/30 text-gray-300 hover:bg-netflix-light-gray/50"
                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                }`}
+                  }`}
               >
                 <tab.icon className="h-4 w-4" />
                 {tab.label}
@@ -432,11 +432,10 @@ export default function AdminDashboard() {
       {/* Status */}
       {status && (
         <div className="container mx-auto px-6 pt-6">
-          <div className={`rounded-lg border p-4 text-sm ${
-            status.type === "error" ? "border-red-500/40 bg-red-500/10 text-red-400" :
+          <div className={`rounded-lg border p-4 text-sm ${status.type === "error" ? "border-red-500/40 bg-red-500/10 text-red-400" :
             status.type === "success" ? "border-green-500/40 bg-green-500/10 text-green-400" :
-            "border-blue-500/40 bg-blue-500/10 text-blue-400"
-          }`}>{status.text}</div>
+              "border-blue-500/40 bg-blue-500/10 text-blue-400"
+            }`}>{status.text}</div>
         </div>
       )}
 
@@ -511,11 +510,10 @@ export default function AdminDashboard() {
                   {projects.slice(0, 5).map((project) => (
                     <div
                       key={project.id}
-                      className={`flex items-center justify-between p-4 rounded-lg ${
-                        theme === "dark" 
-                          ? "bg-netflix-black/50 border border-netflix-light-gray/30 hover:border-netflix-red/30" 
-                          : "bg-gray-50 border border-gray-200 hover:border-gray-300"
-                      } transition-colors`}
+                      className={`flex items-center justify-between p-4 rounded-lg ${theme === "dark"
+                        ? "bg-netflix-black/50 border border-netflix-light-gray/30 hover:border-netflix-red/30"
+                        : "bg-gray-50 border border-gray-200 hover:border-gray-300"
+                        } transition-colors`}
                     >
                       <div className="flex items-center gap-4">
                         {project.image && <img src={project.image} alt={project.title} className="w-12 h-12 rounded object-cover" />}
@@ -596,7 +594,19 @@ export default function AdminDashboard() {
                               </div>
                               <div className="space-y-2">
                                 <label className={`text-sm font-medium ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>Category</label>
-                                <Input value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })} className={theme === "dark" ? "bg-netflix-black/50 border-netflix-light-gray/30" : "bg-white border-gray-300"} />
+                                <select
+                                  value={editForm.category}
+                                  onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                                  className={`w-full h-10 px-3 rounded-md border text-sm ${theme === "dark" ? "bg-netflix-black/50 border-netflix-light-gray/30 text-white" : "bg-white border-gray-300 text-gray-900"}`}
+                                >
+                                  <option value="AI/ML">AI/ML</option>
+                                  <option value="NLP">NLP</option>
+                                  <option value="Data Science">Data Science</option>
+                                  <option value="Full Stack">Full Stack</option>
+                                  <option value="Python">Python</option>
+                                  <option value="Generative AI">Generative AI</option>
+                                  <option value="Other">Other</option>
+                                </select>
                               </div>
                             </div>
                             <div className="space-y-2">
@@ -605,8 +615,33 @@ export default function AdminDashboard() {
                             </div>
                             <div className="space-y-2">
                               <label className={`text-sm font-medium ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>Image URL</label>
-                              <Input value={editForm.image} onChange={(e) => setEditForm({ ...editForm, image: e.target.value })} className={theme === "dark" ? "bg-netflix-black/50 border-netflix-light-gray/30" : "bg-white border-gray-300"} />
-                              {editForm.image && <img src={editForm.image} alt="Preview" className="w-32 h-32 object-cover rounded border" />}
+                              <Input value={editForm.image} onChange={(e) => setEditForm({ ...editForm, image: e.target.value })} placeholder="https://... or /images/projects/..." className={theme === "dark" ? "bg-netflix-black/50 border-netflix-light-gray/30" : "bg-white border-gray-300"} />
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                <span className={`text-xs ${theme === "dark" ? "text-gray-500" : "text-gray-400"}`}>Quick:</span>
+                                {[
+                                  { label: "AI/ML", src: "/images/projects/aiml.png" },
+                                  { label: "Data", src: "/images/projects/data.png" },
+                                  { label: "NLP", src: "/images/projects/nlp.png" },
+                                  { label: "Full Stack", src: "/images/projects/fullstack.png" },
+                                ].map(preset => (
+                                  <button
+                                    key={preset.label}
+                                    type="button"
+                                    onClick={() => setEditForm({ ...editForm, image: preset.src })}
+                                    className={`px-2 py-0.5 text-[10px] rounded border transition-all ${editForm.image === preset.src
+                                      ? "bg-netflix-red text-white border-netflix-red"
+                                      : theme === "dark" ? "bg-white/5 text-gray-400 border-white/10 hover:bg-white/10" : "bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200"
+                                      }`}
+                                  >
+                                    {preset.label}
+                                  </button>
+                                ))}
+                              </div>
+                              {editForm.image && (
+                                <div className={`mt-2 p-2 rounded-lg border ${theme === "dark" ? "border-white/10 bg-white/5" : "border-gray-200 bg-gray-50"}`}>
+                                  <img src={editForm.image} alt="Preview" className="w-48 aspect-video object-cover rounded" />
+                                </div>
+                              )}
                             </div>
                             <div className="grid gap-4 md:grid-cols-2">
                               <div className="space-y-2">
@@ -688,6 +723,27 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {/* GitHub Import Tab */}
+        {activeTab === "github" && (
+          <GitHubImportTab
+            theme={theme}
+            projects={projects}
+            setProjects={setProjects}
+            githubRepos={githubRepos}
+            setGithubRepos={setGithubRepos}
+            isLoadingGithub={isLoadingGithub}
+            setIsLoadingGithub={setIsLoadingGithub}
+            githubSearch={githubSearch}
+            setGithubSearch={setGithubSearch}
+            setStatus={setStatus}
+          />
+        )}
+
+        {/* Content CMS Tab */}
+        {activeTab === "content" && (
+          <ContentCMSTab theme={theme} storedToken={storedToken} setStatus={setStatus} />
         )}
 
         {/* Media Tab */}
@@ -809,6 +865,588 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+/* ────────────────────────────────────────────
+   GitHub Import Tab — separate component
+   ──────────────────────────────────────────── */
+
+interface GitHubImportTabProps {
+  theme: "dark" | "light"
+  projects: Project[]
+  setProjects: (p: Project[]) => void
+  githubRepos: any[]
+  setGithubRepos: (r: any[]) => void
+  isLoadingGithub: boolean
+  setIsLoadingGithub: (v: boolean) => void
+  githubSearch: string
+  setGithubSearch: (v: string) => void
+  setStatus: (s: StatusMessage | null) => void
+}
+
+const LANGUAGE_COLORS: Record<string, string> = {
+  JavaScript: "#f1e05a",
+  TypeScript: "#3178c6",
+  Python: "#3572a5",
+  Java: "#b07219",
+  "C++": "#f34b7d",
+  C: "#555555",
+  Go: "#00ADD8",
+  Rust: "#dea584",
+  Ruby: "#701516",
+  PHP: "#4F5D95",
+  Swift: "#F05138",
+  Kotlin: "#A97BFF",
+  HTML: "#e34c26",
+  CSS: "#563d7c",
+  "Jupyter Notebook": "#DA5B0B",
+  Shell: "#89e051",
+}
+
+function GitHubImportTab({
+  theme,
+  projects,
+  setProjects,
+  githubRepos,
+  setGithubRepos,
+  isLoadingGithub,
+  setIsLoadingGithub,
+  githubSearch,
+  setGithubSearch,
+  setStatus,
+}: GitHubImportTabProps) {
+
+  const fetchGithubRepos = async () => {
+    setIsLoadingGithub(true)
+    try {
+      const res = await fetch("/api/github-repos")
+      const data = await res.json()
+      setGithubRepos(data.repos || [])
+      setStatus({ type: "success", text: `✅ Fetched ${(data.repos || []).length} GitHub repos!` })
+      setTimeout(() => setStatus(null), 3000)
+    } catch (error) {
+      setStatus({ type: "error", text: "Failed to fetch GitHub repos." })
+    } finally {
+      setIsLoadingGithub(false)
+    }
+  }
+
+  const isImported = (repoId: string) =>
+    projects.some((p) => p.github?.includes(repoId) || p.id === `gh-${repoId}`)
+
+  const isImportedByUrl = (htmlUrl: string) =>
+    projects.some((p) => p.github === htmlUrl)
+
+  const handleToggleRepo = (repo: any) => {
+    const alreadyImported = isImportedByUrl(repo.html_url)
+
+    if (alreadyImported) {
+      // Remove from projects
+      setProjects(projects.filter((p) => p.github !== repo.html_url))
+      setStatus({ type: "info", text: `Removed "${repo.name}". Click Save in Projects tab to apply.` })
+    } else {
+      // Add as new project with auto-populated fields
+      const newProject: Project = {
+        id: `gh-${repo.id}`,
+        title: repo.name
+          .replace(/-/g, " ")
+          .replace(/\b\w/g, (c: string) => c.toUpperCase()), // kebab-case → Title Case
+        description: repo.description || `A ${repo.language || "software"} project.`,
+        image: `https://opengraph.githubassets.com/1/${repo.html_url.replace("https://github.com/", "")}`,
+        technologies: [repo.language, ...repo.topics.slice(0, 4)].filter(Boolean),
+        github: repo.html_url,
+        demo: repo.homepage || "",
+        featured: false,
+        visible: true,
+        category: repo.language || "Other",
+      }
+      setProjects([newProject, ...projects])
+      setStatus({ type: "success", text: `Added "${newProject.title}". Click Save in Projects tab to persist.` })
+    }
+    setTimeout(() => setStatus(null), 3000)
+  }
+
+  const filteredRepos = githubRepos.filter(
+    (repo) =>
+      repo.name.toLowerCase().includes(githubSearch.toLowerCase()) ||
+      (repo.description || "").toLowerCase().includes(githubSearch.toLowerCase()) ||
+      (repo.language || "").toLowerCase().includes(githubSearch.toLowerCase())
+  )
+
+  return (
+    <div className="space-y-6">
+      <Card className={`${theme === "dark" ? "border-netflix-red/20 bg-netflix-light-gray/30" : "border-gray-200 bg-white"} backdrop-blur`}>
+        <CardHeader>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Github className="h-5 w-5" />
+                Import from GitHub
+              </CardTitle>
+              <CardDescription className="mt-1">
+                Select repos to add to your portfolio. GitHub link, demo, and description are auto-filled.
+              </CardDescription>
+            </div>
+            <Button
+              onClick={fetchGithubRepos}
+              disabled={isLoadingGithub}
+              size="sm"
+              className="bg-netflix-red hover:bg-netflix-red/90 text-white"
+            >
+              {isLoadingGithub ? (
+                <><Activity className="h-4 w-4 mr-2 animate-spin" /> Fetching...</>
+              ) : githubRepos.length > 0 ? (
+                <><RefreshCw className="h-4 w-4 mr-2" /> Refresh</>
+              ) : (
+                <><Github className="h-4 w-4 mr-2" /> Fetch My Repos</>
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {githubRepos.length === 0 && !isLoadingGithub ? (
+            <div className="text-center py-16 text-gray-400">
+              <Github className="h-16 w-16 mx-auto mb-4 opacity-30" />
+              <p className="text-lg mb-2">No repos loaded yet</p>
+              <p className="text-sm">Click &quot;Fetch My Repos&quot; to load your GitHub repos</p>
+            </div>
+          ) : isLoadingGithub ? (
+            <div className="text-center py-16 text-gray-400">
+              <Activity className="h-10 w-10 mx-auto mb-4 animate-spin" />
+              <p>Fetching repos from GitHub...</p>
+            </div>
+          ) : (
+            <>
+              {/* Search + stats bar */}
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <Input
+                  placeholder="Search repos by name, description, or language..."
+                  value={githubSearch}
+                  onChange={(e) => setGithubSearch(e.target.value)}
+                  className={`flex-1 ${theme === "dark" ? "bg-netflix-black/50 border-netflix-light-gray/30" : "bg-white border-gray-300"}`}
+                />
+                <div className="flex gap-2 items-center text-sm text-gray-400 shrink-0">
+                  <Badge variant="outline">{filteredRepos.length} repos</Badge>
+                  <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                    {projects.filter((p) => p.id.startsWith("gh-")).length} imported
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Repo grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredRepos.map((repo) => {
+                  const imported = isImportedByUrl(repo.html_url)
+                  return (
+                    <div
+                      key={repo.id}
+                      onClick={() => handleToggleRepo(repo)}
+                      className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] ${imported
+                        ? "border-green-500/60 bg-green-500/10 shadow-lg shadow-green-500/10"
+                        : theme === "dark"
+                          ? "border-netflix-light-gray/30 bg-netflix-black/30 hover:border-netflix-red/40"
+                          : "border-gray-200 bg-white hover:border-blue-400/60"
+                        }`}
+                    >
+                      {/* Selection indicator */}
+                      <div className={`absolute top-3 right-3 w-6 h-6 rounded-full flex items-center justify-center transition-all ${imported
+                        ? "bg-green-500 text-white"
+                        : theme === "dark" ? "bg-netflix-light-gray/50 text-gray-500" : "bg-gray-200 text-gray-400"
+                        }`}>
+                        {imported ? <Check className="h-4 w-4" /> : <Circle className="h-3 w-3" />}
+                      </div>
+
+                      {/* Repo name */}
+                      <h3 className={`font-semibold text-base mb-1 pr-8 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                        {repo.name}
+                      </h3>
+
+                      {/* Description */}
+                      <p className={`text-xs mb-3 line-clamp-2 ${theme === "dark" ? "text-gray-400" : "text-gray-600"}`}>
+                        {repo.description || "No description"}
+                      </p>
+
+                      {/* Meta row */}
+                      <div className="flex items-center gap-3 text-xs">
+                        {repo.language && (
+                          <span className="flex items-center gap-1">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full inline-block"
+                              style={{ backgroundColor: LANGUAGE_COLORS[repo.language] || "#888" }}
+                            />
+                            <span className={theme === "dark" ? "text-gray-300" : "text-gray-700"}>{repo.language}</span>
+                          </span>
+                        )}
+                        {repo.stars > 0 && (
+                          <span className="flex items-center gap-1 text-yellow-500">
+                            <Star className="h-3 w-3 fill-current" />
+                            {repo.stars}
+                          </span>
+                        )}
+                        {repo.homepage && (
+                          <span className="flex items-center gap-1 text-blue-400">
+                            <ExternalLink className="h-3 w-3" />
+                            Live
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Topics */}
+                      {repo.topics.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {repo.topics.slice(0, 3).map((topic: string) => (
+                            <Badge key={topic} variant="secondary" className="text-[10px] px-1.5 py-0">
+                              {topic}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+/* ────────────────────────────────────────────
+   Content CMS Tab — full site content editor
+   ──────────────────────────────────────────── */
+
+interface ContentCMSTabProps {
+  theme: "dark" | "light"
+  storedToken: string | null
+  setStatus: (s: StatusMessage | null) => void
+}
+
+function ContentCMSTab({ theme, storedToken, setStatus }: ContentCMSTabProps) {
+  const [content, setContent] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [activeSection, setActiveSection] = useState<string>("about")
+
+  useEffect(() => {
+    fetchContent()
+  }, [])
+
+  const fetchContent = async () => {
+    setIsLoading(true)
+    try {
+      const res = await fetch("/api/content")
+      const data = await res.json()
+      setContent(data)
+    } catch {
+      setStatus({ type: "error", text: "Failed to load site content" })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const saveContent = async () => {
+    setIsSaving(true)
+    try {
+      const res = await fetch("/api/content", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-token": storedToken || "",
+          "Authorization": `Bearer ${storedToken || ""}`,
+        },
+        body: JSON.stringify(content),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setStatus({ type: "success", text: "✅ All content saved!" })
+      } else if (res.status === 401) {
+        setStatus({ type: "error", text: "Unauthorized — please log in again" })
+      } else {
+        setStatus({ type: "error", text: `Save failed: ${data.error || res.statusText}` })
+      }
+    } catch (err: any) {
+      console.error("Content save error:", err)
+      setStatus({ type: "error", text: `Network error: ${err.message}` })
+    } finally {
+      setIsSaving(false)
+      setTimeout(() => setStatus(null), 3000)
+    }
+  }
+
+  if (isLoading || !content) {
+    return (
+      <div className="text-center py-16 text-gray-400">
+        <Activity className="h-10 w-10 mx-auto mb-4 animate-spin" />
+        <p>Loading site content...</p>
+      </div>
+    )
+  }
+
+  const sections = [
+    { id: "about", label: "About / Bio", icon: "👤" },
+    { id: "experience", label: "Experience", icon: "💼" },
+    { id: "achievements", label: "Achievements", icon: "🏆" },
+    { id: "certifications", label: "Certifications", icon: "📜" },
+    { id: "skills", label: "Skills", icon: "⚡" },
+    { id: "contact", label: "Contact", icon: "📬" },
+  ]
+
+  const cardClass = theme === "dark"
+    ? "border-netflix-red/20 bg-netflix-light-gray/30"
+    : "border-gray-200 bg-white"
+  const inputClass = theme === "dark"
+    ? "bg-netflix-black/50 border-netflix-light-gray/30 text-white"
+    : "bg-white border-gray-300 text-gray-900"
+
+  return (
+    <div className="space-y-4">
+      {/* Save bar */}
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {sections.map(s => (
+            <button
+              key={s.id}
+              onClick={() => setActiveSection(s.id)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${activeSection === s.id
+                ? "bg-netflix-red text-white"
+                : theme === "dark" ? "bg-white/5 text-gray-400 hover:bg-white/10" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+            >
+              {s.icon} {s.label}
+            </button>
+          ))}
+        </div>
+        <Button onClick={saveContent} disabled={isSaving} className="bg-netflix-red hover:bg-netflix-red/90 text-white shrink-0 ml-2">
+          {isSaving ? <><Activity className="h-4 w-4 mr-2 animate-spin" /> Saving...</> : <><Save className="h-4 w-4 mr-2" /> Save All</>}
+        </Button>
+      </div>
+
+      {/* About Section */}
+      {activeSection === "about" && (
+        <Card className={cardClass}>
+          <CardHeader><CardTitle className="flex items-center gap-2">👤 About / Bio</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Full Name</label>
+                <Input className={inputClass} value={content.about?.name || ""} onChange={e => setContent({ ...content, about: { ...content.about, name: e.target.value } })} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Tagline</label>
+                <Input className={inputClass} value={content.about?.tagline || ""} onChange={e => setContent({ ...content, about: { ...content.about, tagline: e.target.value } })} />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Bio / Summary</label>
+              <Textarea className={inputClass} rows={3} value={content.about?.bio || ""} onChange={e => setContent({ ...content, about: { ...content.about, bio: e.target.value } })} />
+            </div>
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">CGPA</label>
+                <Input className={inputClass} value={content.about?.cgpa || ""} onChange={e => setContent({ ...content, about: { ...content.about, cgpa: e.target.value } })} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">College</label>
+                <Input className={inputClass} value={content.about?.college || ""} onChange={e => setContent({ ...content, about: { ...content.about, college: e.target.value } })} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Degree</label>
+                <Input className={inputClass} value={content.about?.degree || ""} onChange={e => setContent({ ...content, about: { ...content.about, degree: e.target.value } })} />
+              </div>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Period</label>
+                <Input className={inputClass} value={content.about?.period || ""} onChange={e => setContent({ ...content, about: { ...content.about, period: e.target.value } })} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Coursework</label>
+                <Input className={inputClass} value={content.about?.coursework || ""} onChange={e => setContent({ ...content, about: { ...content.about, coursework: e.target.value } })} />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Expertise</label>
+              <Textarea className={inputClass} rows={3} value={content.about?.expertise || ""} onChange={e => setContent({ ...content, about: { ...content.about, expertise: e.target.value } })} />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Skills (comma-separated)</label>
+              <Input className={inputClass} value={(content.about?.skills || []).join(", ")} onChange={e => setContent({ ...content, about: { ...content.about, skills: e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean) } })} />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 mb-1 block">Languages (comma-separated)</label>
+              <Input className={inputClass} value={(content.about?.languages || []).join(", ")} onChange={e => setContent({ ...content, about: { ...content.about, languages: e.target.value.split(",").map((s: string) => s.trim()).filter(Boolean) } })} />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Experience Section */}
+      {activeSection === "experience" && (
+        <Card className={cardClass}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">💼 Experience</CardTitle>
+              <Button size="sm" onClick={() => setContent({ ...content, experiences: [...(content.experiences || []), { title: "", company: "", period: "", location: "", description: [""], type: "Internship" }] })}>
+                <Plus className="h-4 w-4 mr-1" /> Add
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {(content.experiences || []).map((exp: any, i: number) => (
+              <div key={i} className={`p-4 rounded-lg ${theme === "dark" ? "bg-netflix-black/30 border border-white/10" : "bg-gray-50 border border-gray-200"}`}>
+                <div className="flex justify-between mb-3">
+                  <span className="text-xs font-semibold text-gray-400">Experience #{i + 1}</span>
+                  <Button size="sm" variant="ghost" onClick={() => {
+                    const exps = [...content.experiences]; exps.splice(i, 1);
+                    setContent({ ...content, experiences: exps })
+                  }}><Trash2 className="h-3 w-3 text-red-400" /></Button>
+                </div>
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <Input className={inputClass} placeholder="Title" value={exp.title} onChange={e => { const exps = [...content.experiences]; exps[i] = { ...exp, title: e.target.value }; setContent({ ...content, experiences: exps }) }} />
+                  <Input className={inputClass} placeholder="Company" value={exp.company} onChange={e => { const exps = [...content.experiences]; exps[i] = { ...exp, company: e.target.value }; setContent({ ...content, experiences: exps }) }} />
+                  <Input className={inputClass} placeholder="Period" value={exp.period} onChange={e => { const exps = [...content.experiences]; exps[i] = { ...exp, period: e.target.value }; setContent({ ...content, experiences: exps }) }} />
+                  <Input className={inputClass} placeholder="Location" value={exp.location} onChange={e => { const exps = [...content.experiences]; exps[i] = { ...exp, location: e.target.value }; setContent({ ...content, experiences: exps }) }} />
+                  <Input className={inputClass} placeholder="Type (Internship, Club Activity...)" value={exp.type} onChange={e => { const exps = [...content.experiences]; exps[i] = { ...exp, type: e.target.value }; setContent({ ...content, experiences: exps }) }} />
+                </div>
+                <div className="mt-3 space-y-2">
+                  <label className="text-xs text-gray-400">Bullet Points</label>
+                  {(exp.description || []).map((bullet: string, j: number) => (
+                    <div key={j} className="flex gap-2">
+                      <Input className={`flex-1 ${inputClass}`} value={bullet} onChange={e => {
+                        const exps = [...content.experiences]; const desc = [...exp.description]; desc[j] = e.target.value; exps[i] = { ...exp, description: desc }; setContent({ ...content, experiences: exps })
+                      }} />
+                      <Button size="sm" variant="ghost" onClick={() => {
+                        const exps = [...content.experiences]; const desc = [...exp.description]; desc.splice(j, 1); exps[i] = { ...exp, description: desc }; setContent({ ...content, experiences: exps })
+                      }}><X className="h-3 w-3" /></Button>
+                    </div>
+                  ))}
+                  <Button size="sm" variant="outline" onClick={() => {
+                    const exps = [...content.experiences]; exps[i] = { ...exp, description: [...(exp.description || []), ""] }; setContent({ ...content, experiences: exps })
+                  }}><Plus className="h-3 w-3 mr-1" /> Add Bullet</Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Achievements */}
+      {activeSection === "achievements" && (
+        <Card className={cardClass}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">🏆 Achievements</CardTitle>
+              <Button size="sm" onClick={() => setContent({ ...content, achievements: [...(content.achievements || []), { title: "", detail: "" }] })}>
+                <Plus className="h-4 w-4 mr-1" /> Add
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {(content.achievements || []).map((a: any, i: number) => (
+              <div key={i} className={`p-4 rounded-lg flex gap-3 items-start ${theme === "dark" ? "bg-netflix-black/30 border border-white/10" : "bg-gray-50 border border-gray-200"}`}>
+                <div className="flex-1 space-y-2">
+                  <Input className={inputClass} placeholder="Title" value={a.title} onChange={e => { const ach = [...content.achievements]; ach[i] = { ...a, title: e.target.value }; setContent({ ...content, achievements: ach }) }} />
+                  <Textarea className={inputClass} rows={2} placeholder="Detail" value={a.detail} onChange={e => { const ach = [...content.achievements]; ach[i] = { ...a, detail: e.target.value }; setContent({ ...content, achievements: ach }) }} />
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => { const ach = [...content.achievements]; ach.splice(i, 1); setContent({ ...content, achievements: ach }) }}><Trash2 className="h-3 w-3 text-red-400" /></Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Certifications */}
+      {activeSection === "certifications" && (
+        <Card className={cardClass}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">📜 Certifications</CardTitle>
+              <Button size="sm" onClick={() => setContent({ ...content, certifications: [...(content.certifications || []), ""] })}>
+                <Plus className="h-4 w-4 mr-1" /> Add
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {(content.certifications || []).map((cert: string, i: number) => (
+              <div key={i} className="flex gap-2">
+                <Input className={`flex-1 ${inputClass}`} value={cert} onChange={e => { const certs = [...content.certifications]; certs[i] = e.target.value; setContent({ ...content, certifications: certs }) }} />
+                <Button size="sm" variant="ghost" onClick={() => { const certs = [...content.certifications]; certs.splice(i, 1); setContent({ ...content, certifications: certs }) }}><Trash2 className="h-3 w-3 text-red-400" /></Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Skills */}
+      {activeSection === "skills" && (
+        <Card className={cardClass}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">⚡ Skill Categories</CardTitle>
+              <Button size="sm" onClick={() => setContent({ ...content, skills: [...(content.skills || []), { title: "", icon: "Code", color: "text-blue-400", skills: [] }] })}>
+                <Plus className="h-4 w-4 mr-1" /> Add Category
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {(content.skills || []).map((cat: any, ci: number) => (
+              <div key={ci} className={`p-4 rounded-lg ${theme === "dark" ? "bg-netflix-black/30 border border-white/10" : "bg-gray-50 border border-gray-200"}`}>
+                <div className="flex justify-between mb-3">
+                  <Input className={`w-64 ${inputClass}`} placeholder="Category Title" value={cat.title} onChange={e => { const sk = [...content.skills]; sk[ci] = { ...cat, title: e.target.value }; setContent({ ...content, skills: sk }) }} />
+                  <Button size="sm" variant="ghost" onClick={() => { const sk = [...content.skills]; sk.splice(ci, 1); setContent({ ...content, skills: sk }) }}><Trash2 className="h-3 w-3 text-red-400" /></Button>
+                </div>
+                <div className="space-y-2">
+                  {(cat.skills || []).map((skill: any, si: number) => (
+                    <div key={si} className="flex gap-2 items-center">
+                      <Input className={`flex-1 ${inputClass}`} placeholder="Skill name" value={skill.name} onChange={e => { const sk = [...content.skills]; const skills = [...cat.skills]; skills[si] = { ...skill, name: e.target.value }; sk[ci] = { ...cat, skills }; setContent({ ...content, skills: sk }) }} />
+                      <Input className={`w-20 ${inputClass}`} type="number" min={0} max={100} placeholder="%" value={skill.level} onChange={e => { const sk = [...content.skills]; const skills = [...cat.skills]; skills[si] = { ...skill, level: parseInt(e.target.value) || 0 }; sk[ci] = { ...cat, skills }; setContent({ ...content, skills: sk }) }} />
+                      <Button size="sm" variant="ghost" onClick={() => { const sk = [...content.skills]; const skills = [...cat.skills]; skills.splice(si, 1); sk[ci] = { ...cat, skills }; setContent({ ...content, skills: sk }) }}><X className="h-3 w-3" /></Button>
+                    </div>
+                  ))}
+                  <Button size="sm" variant="outline" onClick={() => { const sk = [...content.skills]; sk[ci] = { ...cat, skills: [...(cat.skills || []), { name: "", level: 70 }] }; setContent({ ...content, skills: sk }) }}>
+                    <Plus className="h-3 w-3 mr-1" /> Add Skill
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Contact */}
+      {activeSection === "contact" && (
+        <Card className={cardClass}>
+          <CardHeader><CardTitle className="flex items-center gap-2">📬 Contact Info</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Email</label>
+                <Input className={inputClass} value={content.contact?.email || ""} onChange={e => setContent({ ...content, contact: { ...content.contact, email: e.target.value } })} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">LinkedIn URL</label>
+                <Input className={inputClass} value={content.contact?.linkedin || ""} onChange={e => setContent({ ...content, contact: { ...content.contact, linkedin: e.target.value } })} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">GitHub URL</label>
+                <Input className={inputClass} value={content.contact?.github || ""} onChange={e => setContent({ ...content, contact: { ...content.contact, github: e.target.value } })} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Hugging Face URL</label>
+                <Input className={inputClass} value={content.contact?.huggingface || ""} onChange={e => setContent({ ...content, contact: { ...content.contact, huggingface: e.target.value } })} />
+              </div>
+              <div>
+                <label className="text-xs text-gray-400 mb-1 block">Location</label>
+                <Input className={inputClass} value={content.contact?.location || ""} onChange={e => setContent({ ...content, contact: { ...content.contact, location: e.target.value } })} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
