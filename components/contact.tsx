@@ -106,7 +106,7 @@ export function Contact() {
 
           <div className="grid md:grid-cols-5 gap-6">
             {/* Contact form — takes 3 columns */}
-            <div className="md:col-span-3 p-5 sm:p-6 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+            <div className="md:col-span-3 p-5 sm:p-6 rounded-xl bg-white/[0.03] backdrop-blur-md border border-white/[0.08] shadow-xl shadow-black/20">
               <h3 className="text-white font-semibold text-lg mb-5">Send a Message</h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -175,7 +175,7 @@ export function Contact() {
                   href={social.href}
                   target={social.href.startsWith("http") || social.href.startsWith("mailto") || social.href.startsWith("tel") ? "_blank" : undefined}
                   rel={social.href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.15] hover:bg-white/[0.04] transition-all group"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.03] backdrop-blur-md border border-white/[0.08] hover:border-netflix-red/30 hover:bg-white/[0.06] transition-all duration-300 group shadow-lg shadow-black/10"
                 >
                   <div className="p-2.5 rounded-lg bg-netflix-red/10 group-hover:bg-netflix-red/20 transition-colors">
                     <social.icon className="h-5 w-5 text-netflix-red" />

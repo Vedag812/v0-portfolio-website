@@ -42,10 +42,10 @@ export function About() {
 
       <div className="container mx-auto px-4 sm:px-6 relative z-10">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl sm:text-5xl font-bold text-center mb-12 gradient-text">About Me</h2>
+          <h2 className="text-3xl sm:text-5xl font-bold text-center mb-14 gradient-text">About Me</h2>
 
           {/* Profile section */}
-          <div className="flex flex-col md:flex-row items-center gap-8 mb-12">
+          <div className="flex flex-col md:flex-row items-center gap-8 mb-14">
             <div className="relative shrink-0">
               <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden border-[3px] border-white/20 shadow-2xl">
                 <Image
