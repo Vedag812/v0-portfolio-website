@@ -83,7 +83,7 @@ export function LeetCodeStats() {
             <div className="container mx-auto px-4 sm:px-6">
                 <div className="max-w-4xl mx-auto">
                     {/* Card */}
-                    <div className="relative bg-gradient-to-br from-[#1a1a1a] to-[#111] rounded-2xl border border-white/5 overflow-hidden">
+                    <div className="relative bg-gradient-to-br from-[#1a1a1a] to-[#111] rounded-2xl border border-white/5 overflow-hidden gradient-border card-shimmer">
                         {/* Subtle glow */}
                         <div className="absolute -top-20 -right-20 w-40 h-40 bg-amber-500/5 rounded-full blur-3xl" />
                         <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl" />

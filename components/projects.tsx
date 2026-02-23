@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react"
 import type { GitHubProject } from "@/lib/github"
 import { useMediaConfig } from "@/components/media-config-provider"
 import { ProjectModal } from "@/components/project-modal"
+import { useScrollReveal } from "@/hooks/use-scroll-reveal"
 import Image from "next/image"
 
 interface HuggingFaceProject {
@@ -114,6 +115,7 @@ export function Projects() {
   const [huggingfaceProjects, setHuggingfaceProjects] = useState<HuggingFaceProject[]>([])
   const [customProjects, setCustomProjects] = useState<CustomProject[]>([])
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const revealRef = useScrollReveal()
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -169,7 +171,7 @@ export function Projects() {
       <div className="container mx-auto px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-10">
+          <div className="text-center mb-10 reveal">
             <h2 className="text-3xl sm:text-5xl font-bold mb-3 gradient-text">
               Featured Projects
             </h2>
@@ -202,7 +204,7 @@ export function Projects() {
           </div>
 
           {/* Projects Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+          <div ref={revealRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 stagger-children">
             {filteredProjects.map(({ project, category }, index) => {
               const title = getProjectTitle(project)
               const techs = getProjectTechnologies(project)
@@ -215,7 +217,7 @@ export function Projects() {
               return (
                 <div
                   key={project.id ?? `${title}-${index}`}
-                  className={`group relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-netflix-red/10 ${featured ? "ring-1 ring-yellow-500/40" : ""
+                  className={`group relative rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-netflix-red/10 card-shimmer hover-lift ${featured ? "ring-1 ring-yellow-500/40" : ""
                     }`}
                   style={{ animationDelay: `${index * 0.05}s` }}
                   onClick={() => setSelectedProject(project)}
