@@ -31,3 +31,6 @@ next-env.d.ts
 resume_text.txt
 PROJECTS_BACKUP.md
 .env*.local
+
+env_token.txt
+env_url.txt
