@@ -1,36 +1,176 @@
-# Portfolio website
+<div align="center">
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+# 🎬 Vedant Agarwal — Portfolio
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/vedag812s-projects/v0-portfolio-website)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/irLMAA28gFG)
+**A Netflix-inspired, full-stack portfolio website with CMS, live data integrations, and premium animations.**
 
-## Overview
+[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vedant-agarwal-812.vercel.app)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)](https://typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss)](https://tailwindcss.com)
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+[Live Demo](https://vedant-agarwal-812.vercel.app) · [Report Bug](https://github.com/Vedag812/v0-portfolio-website/issues) · [Request Feature](https://github.com/Vedag812/v0-portfolio-website/issues)
 
-## Deployment
+</div>
 
-Your project is live at:
+---
 
-**[https://vercel.com/vedag812s-projects/v0-portfolio-website](https://vercel.com/vedag812s-projects/v0-portfolio-website)**
+## ✨ Features
 
-## Build your app
+### 🎥 Netflix-Themed UI
+- **Profile selection screen** — "Who's watching?" style with Recruiter, Student, and Explorer profiles
+- **Cinematic hero sections** with background GIFs and gradient overlays
+- **Custom 404 page** with glitching text animation and floating particles
+- **Dark theme** with Netflix red accents throughout
 
-Continue building your app on:
+### 📊 Live Data Integrations
+- **LeetCode Stats** — Real-time problem count, ranking, streak, and difficulty breakdown via LeetCode's GraphQL API
+- **Explorer Page** — Live articles from **Dev.to** and **Hacker News**, auto-refreshed hourly
+- **GitHub Repos** — Auto-fetched project data from GitHub API
 
-**[https://v0.app/chat/irLMAA28gFG](https://v0.app/chat/irLMAA28gFG)**
+### 🛠️ Content Management System (CMS)
+- **Admin Dashboard** (`/admin`) — Edit all site content, projects, and media
+- **Redis-backed storage** via Upstash — all content changes persist instantly
+- **Real-time updates** — edits reflect on the live site immediately
 
-## How It Works
+### 🎨 Visual Polish
+- **Scroll-reveal animations** — Sections fade in as you scroll
+- **Card shimmer effect** — Light sweep on hover
+- **Gradient borders** — Red glow on card hover
+- **Staggered grid entrance** — Project cards cascade in with delays
+- **Glassmorphism** — Frosted glass effects on contact cards
+- **GSAP animations** — 3D card perspective effects on the profile page
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+### 📱 Responsive Design
+- Fully responsive across desktop, tablet, and mobile
+- Optimized touch interactions for mobile users
+- Adaptive layouts (3-col → 2-col → 1-col grids)
 
-## Admin Media Editor
+---
 
-- Set an `ADMIN_TOKEN` environment variable (locally in `.env.local`, and in your hosting dashboard) to secure the media editor.
-- Visit `/admin` while the dev server or deployment is running, enter the token, and update the URLs for the profile image and section backgrounds.
-- Save changes to persist them to `data/media.json`, then refresh the site to see the new assets.
+## 🏗️ Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Framework** | Next.js 14 (App Router) |
+| **Language** | TypeScript |
+| **Styling** | Tailwind CSS 4 |
+| **Database** | Upstash Redis |
+| **Animations** | GSAP, CSS keyframes |
+| **Deployment** | Vercel |
+| **Analytics** | Vercel Analytics |
+| **Font** | Geist Sans & Mono |
+
+---
+
+## 📁 Project Structure
+
+```
+├── app/
+│   ├── about/          # About page
+│   ├── admin/          # CMS admin dashboard
+│   ├── api/            # API routes
+│   │   ├── content/    # CMS content CRUD
+│   │   ├── explorer/   # Live articles (Dev.to + HN)
+│   │   ├── leetcode/   # LeetCode stats
+│   │   ├── projects/   # Projects CRUD
+│   │   └── verify/     # Admin auth
+│   ├── browse/         # Profile selection
+│   ├── contact/        # Contact page
+│   ├── experience/     # Experience page
+│   ├── explorer/       # Tech articles & movies
+│   ├── projects/       # Projects grid
+│   └── skills/         # Skills + LeetCode stats
+├── components/         # React components
+├── data/               # Static data (projects.json)
+├── hooks/              # Custom hooks
+└── lib/                # Utilities
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/Vedag812/v0-portfolio-website.git
+cd v0-portfolio-website
+
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env.local
+```
+
+### Environment Variables
+
+```env
+ADMIN_TOKEN=your_admin_password
+UPSTASH_REDIS_REST_URL=your_upstash_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_token
+GITHUB_TOKEN=your_github_pat          # optional, for private repos
+```
+
+### Development
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Production Build
+
+```bash
+npm run build
+npm start
+```
+
+---
+
+## 📸 Screenshots
+
+| Home | Projects | Explorer |
+|------|----------|----------|
+| Netflix-style splash | 3-column grid with filters | Live AI/tech articles |
+
+| Skills + LeetCode | Contact | 404 Page |
+|-------------------|---------|----------|
+| Stats card with progress bars | Glassmorphism form | Glitching "404" text |
+
+---
+
+## 🔑 Key Pages
+
+| Route | Description |
+|-------|-------------|
+| `/` | Cinematic splash screen |
+| `/browse` | Netflix "Who's watching?" profile picker |
+| `/about` | Bio, education, skills, languages |
+| `/skills` | Skill categories + LeetCode stats card |
+| `/projects` | Responsive project grid with category filters |
+| `/experience` | Work experience timeline |
+| `/contact` | Contact form + social links |
+| `/explorer` | Live tech articles, movies & career posts |
+| `/admin` | CMS dashboard (password-protected) |
+
+---
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+<div align="center">
+
+**Built with ❤️ by [Vedant Agarwal](https://github.com/Vedag812)**
+
+</div>
