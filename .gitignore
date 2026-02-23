@@ -30,3 +30,4 @@ next-env.d.ts
 *.pdf
 resume_text.txt
 PROJECTS_BACKUP.md
+.env*.local
